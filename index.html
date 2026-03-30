@@ -12,17 +12,17 @@
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html, body, #root { width:100%; height:100%; overflow:hidden; position:fixed; inset:0; touch-action:none; -ms-touch-action:none; overscroll-behavior:none; -webkit-overflow-scrolling:auto; }
+  html, body, #root { width:100%; height:100%; overflow:hidden; }
 </style>
 <script>
-  // Block touch-driven scrolling/bouncing globally on Safari, except elements with data-scrollable
+  // Block scrolling/bouncing ONLY inside game screens (elements with data-game-lock)
   document.addEventListener('touchmove', function(e) {
     var el = e.target;
     while (el && el !== document.body) {
-      if (el.hasAttribute && el.hasAttribute('data-scrollable')) return;
+      if (el.hasAttribute && el.hasAttribute('data-game-lock')) { e.preventDefault(); return; }
       el = el.parentElement;
     }
-    e.preventDefault();
+    // Not inside a game — allow normal scrolling
   }, { passive: false });
   document.addEventListener('touchstart', function(e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 </script>
@@ -263,17 +263,11 @@ function InjectStyles() {
       body, html {
         font-family: 'Nunito', sans-serif;
         overflow: hidden;
-        position: fixed;
-        inset: 0;
-        touch-action: none;
-        -ms-touch-action: none;
         user-select: none;
         -webkit-user-select: none;
         -webkit-text-size-adjust: 100%;
         -ms-content-zooming: none;
-        overscroll-behavior: none;
       }
-      * { touch-action: none; -webkit-user-select: none; user-select: none; }
     `;
     document.head.appendChild(style);
     return () => { document.head.removeChild(style); document.head.removeChild(link); };
@@ -486,7 +480,7 @@ function HomeScreen({ onNavigate }) {
   ];
 
   return (
-    <div data-scrollable style={{position:'relative',zIndex:10,display:'flex',flexDirection:'column',
+    <div style={{position:'relative',zIndex:10,display:'flex',flexDirection:'column',
       alignItems:'center',padding:'30px 20px',minHeight:'100vh',overflowY:'auto',
       WebkitOverflowScrolling:'touch'}}>
       <div style={{
@@ -671,7 +665,7 @@ function PianoScreen({ onBack }) {
   }, []);
 
   return (
-    <div style={{position:'fixed',inset:0,zIndex:10,display:'flex',
+    <div data-game-lock style={{position:'fixed',inset:0,zIndex:10,display:'flex',
       flexDirection:'column',alignItems:'center',paddingTop:60,
       overflow:'hidden',touchAction:'none',overscrollBehavior:'none'}}>
       <BackButton onClick={onBack} />
@@ -869,7 +863,7 @@ function BubbleScreen({ onBack }) {
   }, [burst]);
 
   return (
-    <div style={{position:'fixed',inset:0,zIndex:10,overflow:'hidden',touchAction:'none',overscrollBehavior:'none'}}>
+    <div data-game-lock style={{position:'fixed',inset:0,zIndex:10,overflow:'hidden',touchAction:'none',overscrollBehavior:'none'}}>
       <BackButton onClick={onBack} />
       <Particles particles={particles} />
       <PopRings rings={rings} />
@@ -964,7 +958,7 @@ function NumbersScreen({ onBack }) {
 
   if (completed) {
     return (
-      <div style={{position:'fixed',inset:0,zIndex:10,display:'flex',
+      <div data-game-lock style={{position:'fixed',inset:0,zIndex:10,display:'flex',
         flexDirection:'column',alignItems:'center',justifyContent:'center',
         overflow:'hidden',touchAction:'none',overscrollBehavior:'none'}}>
         <BackButton onClick={onBack} />
@@ -1010,7 +1004,7 @@ function NumbersScreen({ onBack }) {
   ));
 
   return (
-    <div style={{position:'fixed',inset:0,zIndex:10,display:'flex',
+    <div data-game-lock style={{position:'fixed',inset:0,zIndex:10,display:'flex',
       flexDirection:'column',alignItems:'center',paddingTop:70,
       overflow:'hidden',touchAction:'none',overscrollBehavior:'none'}}>
       <BackButton onClick={onBack} />
@@ -1186,7 +1180,7 @@ function DrawScreen({ onBack }) {
   }, []);
 
   return (
-    <div style={{position:'fixed',inset:0,zIndex:10,display:'flex',flexDirection:'column',
+    <div data-game-lock style={{position:'fixed',inset:0,zIndex:10,display:'flex',flexDirection:'column',
       overflow:'hidden',touchAction:'none',overscrollBehavior:'none'}}>
       <BackButton onClick={onBack} />
 
@@ -1295,7 +1289,7 @@ function App() {
       <SparkleLayer />
       <ShimmerOverlay />
 
-      <div data-scrollable style={{
+      <div style={{
         position:'relative',zIndex:10,width:'100%',height:'100%',
         maxWidth:430,margin:'0 auto',overflowY:'auto',overflowX:'hidden'
       }}>
