@@ -1437,128 +1437,113 @@ const CARTOONS = [
 
 function CartoonScreen({ onBack }) {
   const [currentIdx, setCurrentIdx] = useState(0);
-  const touchStartY = useRef(null);
-  const swiping = useRef(false);
-  const [swipeDir, setSwipeDir] = useState(null);
 
   const goNext = useCallback(() => {
-    setSwipeDir('up');
-    setTimeout(() => {
-      setCurrentIdx(prev => (prev + 1) % CARTOONS.length);
-      setSwipeDir(null);
-    }, 250);
+    setCurrentIdx(prev => (prev + 1) % CARTOONS.length);
   }, []);
 
   const goPrev = useCallback(() => {
-    setSwipeDir('down');
-    setTimeout(() => {
-      setCurrentIdx(prev => (prev - 1 + CARTOONS.length) % CARTOONS.length);
-      setSwipeDir(null);
-    }, 250);
-  }, []);
-
-  const handleTouchStart = useCallback((e) => {
-    touchStartY.current = e.touches[0].clientY;
-    swiping.current = false;
-  }, []);
-
-  const handleTouchMove = useCallback((e) => {
-    if (touchStartY.current === null) return;
-    const diff = touchStartY.current - e.touches[0].clientY;
-    if (Math.abs(diff) > 60 && !swiping.current) {
-      swiping.current = true;
-      if (diff > 0) goNext();
-      else goPrev();
-    }
-  }, [goNext, goPrev]);
-
-  const handleTouchEnd = useCallback(() => {
-    touchStartY.current = null;
-    swiping.current = false;
+    setCurrentIdx(prev => (prev - 1 + CARTOONS.length) % CARTOONS.length);
   }, []);
 
   const video = CARTOONS[currentIdx];
-  const nextVideo = CARTOONS[(currentIdx + 1) % CARTOONS.length];
 
   return (
     <div data-game-lock style={{position:'fixed',inset:0,zIndex:10,display:'flex',flexDirection:'column',
-      overflow:'hidden',background:'#000'}}>
+      overflow:'hidden',background:'#111'}}>
       <BackButton onClick={onBack} />
 
-      {/* Swipe area */}
-      <div style={{flex:1,position:'relative',overflow:'hidden'}}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        {/* Current video */}
-        <div style={{
-          position:'absolute',inset:0,
-          transition: swipeDir ? 'transform 0.25s ease-out, opacity 0.25s ease-out' : 'none',
-          transform: swipeDir === 'up' ? 'translateY(-100%)' : swipeDir === 'down' ? 'translateY(100%)' : 'translateY(0)',
-          opacity: swipeDir ? 0 : 1
-        }}>
-          <iframe
-            key={video.id}
-            src={`https://www.youtube.com/embed/${video.id}?autoplay=1&mute=0&playsinline=1&rel=0&modestbranding=1&controls=1`}
-            style={{width:'100%',height:'100%',border:'none'}}
-            allow="autoplay; encrypted-media; picture-in-picture"
-            allowFullScreen
-          />
+      {/* Video player */}
+      <div style={{flex:1,position:'relative',overflow:'hidden'}}>
+        <iframe
+          key={video.id}
+          src={`https://www.youtube.com/embed/${video.id}?autoplay=1&mute=0&playsinline=1&rel=0&modestbranding=1&controls=1`}
+          style={{width:'100%',height:'100%',border:'none'}}
+          allow="autoplay; encrypted-media; picture-in-picture"
+          allowFullScreen
+        />
+
+        {/* Previous button — left side */}
+        {currentIdx > 0 && (
+          <div role="button"
+            onClick={goPrev} onTouchEnd={(e) => { e.stopPropagation(); goPrev(); }}
+            style={{
+              position:'absolute',left:8,top:'50%',transform:'translateY(-50%)',zIndex:25,
+              width:50,height:50,borderRadius:'50%',cursor:'pointer',
+              background:'linear-gradient(135deg,#E6CCFF,#FFB6C1)',
+              display:'flex',alignItems:'center',justifyContent:'center',
+              boxShadow:'0 4px 15px rgba(0,0,0,0.4)',
+              fontSize:22
+            }}>
+            ▲
+          </div>
+        )}
+
+        {/* Next button — right side */}
+        <div role="button"
+          onClick={goNext} onTouchEnd={(e) => { e.stopPropagation(); goNext(); }}
+          style={{
+            position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',zIndex:25,
+            width:50,height:50,borderRadius:'50%',cursor:'pointer',
+            background:'linear-gradient(135deg,#FF69B4,#A55EEA)',
+            display:'flex',alignItems:'center',justifyContent:'center',
+            boxShadow:'0 4px 15px rgba(0,0,0,0.4)',
+            fontSize:22,
+            animation:'pulse 2s ease-in-out infinite'
+          }}>
+          ▼
+        </div>
+      </div>
+
+      {/* Bottom control bar */}
+      <div style={{
+        padding:'10px 12px',
+        background:'linear-gradient(135deg,rgba(255,105,180,0.15),rgba(165,94,234,0.15))',
+        display:'flex',alignItems:'center',gap:8
+      }}>
+        {/* Big Previous button */}
+        <div role="button"
+          onClick={goPrev} onTouchEnd={(e) => { e.stopPropagation(); goPrev(); }}
+          style={{
+            width:52,height:52,borderRadius:18,cursor:'pointer',
+            background: currentIdx > 0 ? 'linear-gradient(135deg,#E6CCFF,#AED6F1)' : 'rgba(255,255,255,0.1)',
+            display:'flex',alignItems:'center',justifyContent:'center',
+            boxShadow: currentIdx > 0 ? '0 4px 12px rgba(230,204,255,0.4)' : 'none',
+            fontSize:20,
+            opacity: currentIdx > 0 ? 1 : 0.3
+          }}>
+          ⬅️
         </div>
 
-        {/* Video title overlay */}
-        <div style={{
-          position:'absolute',bottom:80,left:16,right:16,zIndex:20,
-          pointerEvents:'none'
-        }}>
+        {/* Title + counter */}
+        <div style={{flex:1,textAlign:'center',minWidth:0}}>
           <div style={{
-            fontFamily:"'Fredoka One',cursive",fontSize:18,color:'white',
-            textShadow:'0 2px 8px rgba(0,0,0,0.7)',
-            lineHeight:1.3
+            fontFamily:"'Fredoka One',cursive",fontSize:14,color:'#FFB6C1',
+            whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'
           }}>
             {video.title}
           </div>
           <div style={{
-            fontFamily:"'Nunito',sans-serif",fontSize:13,color:'rgba(255,255,255,0.7)',
-            marginTop:4
+            fontFamily:"'Nunito',sans-serif",fontSize:11,color:'rgba(255,255,255,0.5)',
+            marginTop:2
           }}>
-            {currentIdx + 1} / {CARTOONS.length} — Swipe up for next
+            {currentIdx + 1} / {CARTOONS.length}
           </div>
         </div>
 
-        {/* Swipe hint arrows */}
-        <div style={{
-          position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',
-          display:'flex',flexDirection:'column',gap:20,zIndex:20,pointerEvents:'none'
-        }}>
-          {currentIdx > 0 && (
-            <div style={{
-              width:36,height:36,borderRadius:'50%',
-              background:'rgba(255,255,255,0.15)',
-              display:'flex',alignItems:'center',justifyContent:'center',
-              fontSize:18,color:'white'
-            }}>▲</div>
-          )}
-          <div style={{
-            width:36,height:36,borderRadius:'50%',
-            background:'rgba(255,255,255,0.15)',
+        {/* Big Next button */}
+        <div role="button"
+          onClick={goNext} onTouchEnd={(e) => { e.stopPropagation(); goNext(); }}
+          style={{
+            width:52,height:52,borderRadius:18,cursor:'pointer',
+            background:'linear-gradient(135deg,#FF69B4,#A55EEA)',
             display:'flex',alignItems:'center',justifyContent:'center',
-            fontSize:18,color:'white',
+            boxShadow:'0 4px 12px rgba(255,105,180,0.4)',
+            fontSize:20,
             animation:'pulse 2s ease-in-out infinite'
-          }}>▼</div>
+          }}>
+          ➡️
         </div>
-      </div>
-
-      {/* Next up bar */}
-      <div style={{
-        padding:'10px 16px',background:'rgba(255,182,193,0.15)',
-        display:'flex',alignItems:'center',gap:10
-      }}>
-        <span style={{fontSize:16}}>⏭️</span>
-        <span style={{fontFamily:"'Nunito',sans-serif",fontSize:13,color:'#FFB6C1'}}>
-          Next: {nextVideo.title}
-        </span>
       </div>
     </div>
   );
