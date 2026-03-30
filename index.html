@@ -1147,29 +1147,29 @@ const DRAW_COLORS = [
   {name:'Purple',color:'#A55EEA'},
   {name:'Black',color:'#222222'}
 ];
-const MIX_COLORS = ['#FF4444','#FF69B4','#4488FF','#44CC44','#A55EEA','#FF9F43','#FFD700','#0ABDE3'];
-
 function DrawScreen({ onBack }) {
   const canvasRef = useRef(null);
   const drawingRef = useRef(false);
   const lastPosRef = useRef(null);
   const [selectedColor, setSelectedColor] = useState('#FF69B4');
   const [mixMode, setMixMode] = useState(false);
-  const mixColorRef = useRef('#FF4444');
-  const mixIndexRef = useRef(0);
+  const mixHueRef = useRef(0);
 
-  // Mix colors timer — cycle every 300ms
+  // Mix mode — smoothly cycle hue every animation frame
   useEffect(() => {
     if (!mixMode) return;
-    const timer = setInterval(() => {
-      mixIndexRef.current = (mixIndexRef.current + 1) % MIX_COLORS.length;
-      mixColorRef.current = MIX_COLORS[mixIndexRef.current];
-    }, 300);
-    return () => clearInterval(timer);
+    let raf;
+    const step = () => {
+      mixHueRef.current = (mixHueRef.current + 0.5) % 360;
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
   }, [mixMode]);
 
   const getColor = useCallback(() => {
-    return mixMode ? mixColorRef.current : selectedColor;
+    if (mixMode) return `hsl(${Math.round(mixHueRef.current)}, 85%, 55%)`;
+    return selectedColor;
   }, [mixMode, selectedColor]);
 
   const getPos = useCallback((e) => {
@@ -1279,23 +1279,6 @@ function DrawScreen({ onBack }) {
                 <span style={{fontSize:16}}>✓</span>}
             </div>
           ))}
-          {/* Mix colors button */}
-          <div role="button"
-            onClick={() => setMixMode(!mixMode)}
-            onTouchEnd={(e) => { e.stopPropagation(); setMixMode(prev => !prev); }}
-            style={{
-              width:44,height:44,borderRadius:14,cursor:'pointer',
-              background: 'linear-gradient(135deg,#FF4444,#4488FF,#44CC44,#A55EEA)',
-              border: mixMode ? '3px solid #FFD700' : '3px solid rgba(255,255,255,0.5)',
-              boxShadow: mixMode ? '0 0 15px rgba(255,215,0,0.5)' : '0 2px 8px rgba(0,0,0,0.15)',
-              transform: mixMode ? 'scale(1.1)' : 'scale(1)',
-              transition:'transform 0.15s, border 0.15s',
-              display:'flex',alignItems:'center',justifyContent:'center',
-              fontFamily:"'Fredoka One',cursive",fontSize:8,color:'white',
-              textShadow:'0 1px 3px rgba(0,0,0,0.5)'
-            }}>
-            MIX
-          </div>
         </div>
 
         {/* Canvas area */}
@@ -1318,6 +1301,36 @@ function DrawScreen({ onBack }) {
               touchAction:'none'
             }}
           />
+        </div>
+      </div>
+
+      {/* Dedicated MIX RAINBOW button — fixed at bottom */}
+      <div style={{
+        padding:'8px 16px',display:'flex',justifyContent:'center',
+        background:'rgba(255,255,255,0.1)'
+      }}>
+        <div role="button"
+          onClick={() => setMixMode(prev => !prev)}
+          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setMixMode(prev => !prev); }}
+          style={{
+            width:'100%',maxWidth:320,height:52,borderRadius:30,cursor:'pointer',
+            background: mixMode
+              ? 'linear-gradient(90deg,#FF4444,#FF9F43,#FECA57,#44CC44,#4488FF,#A55EEA,#FF69B4)'
+              : 'linear-gradient(90deg,#FF444488,#FF9F4388,#FECA5788,#44CC4488,#4488FF88,#A55EEA88,#FF69B488)',
+            backgroundSize: mixMode ? '200% 100%' : '100% 100%',
+            animation: mixMode ? 'gradientShift 3s linear infinite' : 'none',
+            border: mixMode ? '3px solid #FFD700' : '3px solid rgba(255,255,255,0.4)',
+            boxShadow: mixMode
+              ? '0 0 25px rgba(255,105,180,0.5), 0 0 50px rgba(165,94,234,0.3)'
+              : '0 4px 15px rgba(0,0,0,0.1)',
+            display:'flex',alignItems:'center',justifyContent:'center',gap:8,
+            fontFamily:"'Fredoka One',cursive",fontSize:18,color:'white',
+            textShadow:'0 2px 4px rgba(0,0,0,0.3)',
+            transition:'border 0.2s, box-shadow 0.2s'
+          }}>
+          <span style={{fontSize:22}}>🌈</span>
+          {mixMode ? 'RAINBOW ON!' : 'Rainbow Mix'}
+          <span style={{fontSize:22}}>🌈</span>
         </div>
       </div>
     </div>
