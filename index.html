@@ -599,6 +599,61 @@ function PianoScreen({ onBack }) {
 
   const whiteKeys = PIANO_KEYS;
   const keyHeight = Math.min(48, (window.innerHeight - 100) / whiteKeys.length);
+  const [autoPlaying, setAutoPlaying] = useState(false);
+  const autoPlayRef = useRef(null);
+
+  // Twinkle Twinkle + Mary Had a Little Lamb + Ode to Joy medley (~20 seconds)
+  const autoPlaySong = useCallback(() => {
+    if (autoPlaying) return;
+    setAutoPlaying(true);
+    const melody = [
+      // Twinkle Twinkle Little Star
+      {n:'C4',t:0},{n:'C4',t:400},{n:'G4',t:800},{n:'G4',t:1200},
+      {n:'A4',t:1600},{n:'A4',t:2000},{n:'G4',t:2400},
+      {n:'F4',t:3200},{n:'F4',t:3600},{n:'E4',t:4000},{n:'E4',t:4400},
+      {n:'D4',t:4800},{n:'D4',t:5200},{n:'C4',t:5600},
+      // Mary Had a Little Lamb
+      {n:'E4',t:6400},{n:'D4',t:6800},{n:'C4',t:7200},{n:'D4',t:7600},
+      {n:'E4',t:8000},{n:'E4',t:8400},{n:'E4',t:8800},
+      {n:'D4',t:9600},{n:'D4',t:10000},{n:'D4',t:10400},
+      {n:'E4',t:11200},{n:'G4',t:11600},{n:'G4',t:12000},
+      // Ode to Joy
+      {n:'E4',t:12800},{n:'E4',t:13200},{n:'F4',t:13600},{n:'G4',t:14000},
+      {n:'G4',t:14400},{n:'F4',t:14800},{n:'E4',t:15200},{n:'D4',t:15600},
+      {n:'C4',t:16000},{n:'C4',t:16400},{n:'D4',t:16800},{n:'E4',t:17200},
+      {n:'E4',t:17600},{n:'D4',t:18200},{n:'D4',t:18600},
+      // Ending flourish
+      {n:'C4',t:19200},{n:'E4',t:19400},{n:'G4',t:19600},{n:'C5',t:19800},
+    ];
+    const pianoContainer = document.querySelector('[data-piano-keys]');
+    const timeouts = melody.map(({n, t}) => {
+      return setTimeout(() => {
+        const freq = NOTE_FREQS[n];
+        if (!freq) return;
+        playNote(freq, 0.5);
+        // Find the key element and simulate visual feedback
+        const keyIdx = whiteKeys.findIndex(k => k.note === n);
+        if (keyIdx !== -1 && pianoContainer) {
+          const keyEl = pianoContainer.children[keyIdx];
+          if (keyEl) {
+            const rect = keyEl.getBoundingClientRect();
+            handleKey(freq, rect.left + rect.width/2, rect.top + rect.height/2, KEY_COLORS[keyIdx], keyIdx);
+          }
+        }
+      }, t);
+    });
+    autoPlayRef.current = timeouts;
+    // Auto-stop after song ends
+    const endTimeout = setTimeout(() => setAutoPlaying(false), 20500);
+    autoPlayRef.current.push(endTimeout);
+  }, [autoPlaying, handleKey, whiteKeys]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (autoPlayRef.current) autoPlayRef.current.forEach(clearTimeout);
+    };
+  }, []);
 
   return (
     <div style={{position:'fixed',inset:0,zIndex:10,display:'flex',
@@ -625,12 +680,33 @@ function PianoScreen({ onBack }) {
         }} />
       ))}
 
-      <div style={{fontFamily:"'Fredoka One',cursive",fontSize:28,color:'#FF69B4',
-        textShadow:'0 0 10px rgba(255,105,180,0.3)',marginBottom:12}}>
-        🎹 Piano
+      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:10}}>
+        <div style={{fontFamily:"'Fredoka One',cursive",fontSize:28,color:'#FF69B4',
+          textShadow:'0 0 10px rgba(255,105,180,0.3)'}}>
+          🎹 Piano
+        </div>
+        <div role="button"
+          onClick={autoPlaySong} onTouchStart={(e) => { e.preventDefault(); autoPlaySong(); }}
+          style={{
+            background: autoPlaying
+              ? 'linear-gradient(135deg,#A55EEA,#5F6AFF)'
+              : 'linear-gradient(135deg,#FFD700,#FF9F43)',
+            padding:'8px 18px',borderRadius:30,cursor:'pointer',
+            fontFamily:"'Fredoka One',cursive",fontSize:14,color:'white',
+            boxShadow: autoPlaying
+              ? '0 0 20px rgba(165,94,234,0.5)'
+              : '0 4px 15px rgba(255,215,0,0.4)',
+            transition:'transform 0.2s, box-shadow 0.2s',
+            animation: autoPlaying ? 'pulse 1s ease-in-out infinite' : 'none'
+          }}
+          onMouseDown={e => e.currentTarget.style.transform='scale(0.92)'}
+          onMouseUp={e => e.currentTarget.style.transform='scale(1)'}
+        >
+          {autoPlaying ? '🎶 Playing...' : '✨ Play Song'}
+        </div>
       </div>
 
-      <div style={{position:'relative',width:'90%',maxWidth:380,margin:'0 auto'}}>
+      <div data-piano-keys style={{position:'relative',width:'90%',maxWidth:380,margin:'0 auto'}}>
         {/* White keys */}
         {whiteKeys.map((k, i) => {
           const isGlowing = glowKeys[i];
