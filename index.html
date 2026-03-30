@@ -549,7 +549,7 @@ function SplashScreen({ onDone }) {
 }
 
 /* ─── HOME SCREEN ─── */
-function HomeScreen({ onNavigate }) {
+function HomeScreen({ onNavigate, onBack }) {
   useEffect(() => { startLullaby(); return stopLullaby; }, []);
 
   const cards = [
@@ -561,8 +561,6 @@ function HomeScreen({ onNavigate }) {
       shadow:'0 8px 30px rgba(254,202,87,0.4)' },
     { key:'draw', emoji:'🎨', label:'Draw & Color!', grad:'linear-gradient(135deg,#B2F2BB,#0ABDE3)',
       shadow:'0 8px 30px rgba(178,242,187,0.4)' },
-    { key:'cartoons', emoji:'📺', label:'Watch Cartoons', grad:'linear-gradient(135deg,#A55EEA,#FF69B4)',
-      shadow:'0 8px 30px rgba(165,94,234,0.4)' },
     { key:'shapes', emoji:'⭐', label:'Shape Poppers!', grad:'linear-gradient(135deg,#FFD700,#1E90FF)',
       shadow:'0 8px 30px rgba(255,215,0,0.4)' }
   ];
@@ -571,13 +569,14 @@ function HomeScreen({ onNavigate }) {
     <div style={{position:'relative',zIndex:10,display:'flex',flexDirection:'column',
       alignItems:'center',padding:'30px 20px',minHeight:'100vh',overflowY:'auto',
       WebkitOverflowScrolling:'touch'}}>
+      {onBack && <BackButton onClick={onBack} />}
       <div style={{
-        fontFamily:"'Fredoka One',cursive",fontSize:'clamp(28px,7vw,36px)',
+        fontFamily:"'Fredoka One',cursive",fontSize:'clamp(24px,6vw,32px)',
         color:'#FF69B4',
         textShadow:'0 0 15px rgba(255,105,180,0.4), 1px 1px 0 #E6CCFF',
-        marginBottom:30
+        marginBottom:20,marginTop: onBack ? 30 : 0
       }}>
-        Princess Aria's World 🌸
+        🎮 Aria's Games 🌸
       </div>
       <div style={{display:'flex',flexDirection:'column',gap:24,width:'100%',maxWidth:380}}>
         {cards.map((c,i) => (
@@ -623,11 +622,6 @@ function HomeScreen({ onNavigate }) {
               <span style={{position:'absolute',top:12,left:20,fontSize:20,animation:'cardFloat1 2.2s ease-in-out infinite',opacity:0.7}}>🖌️</span>
               <span style={{position:'absolute',top:20,right:25,fontSize:18,animation:'cardFloat2 2.8s ease-in-out infinite',opacity:0.7}}>🌈</span>
               <span style={{position:'absolute',bottom:18,left:45,fontSize:16,animation:'cardBounce 2s ease-in-out 0.3s infinite',opacity:0.6}}>✏️</span>
-            </>}
-            {c.key === 'cartoons' && <>
-              <span style={{position:'absolute',top:15,left:25,fontSize:20,animation:'cardFloat1 2s ease-in-out infinite',opacity:0.7}}>⭐</span>
-              <span style={{position:'absolute',top:20,right:30,fontSize:18,animation:'cardFloat2 2.5s ease-in-out infinite',opacity:0.7}}>🎬</span>
-              <span style={{position:'absolute',bottom:15,left:50,fontSize:16,animation:'cardBounce 2.2s ease-in-out 0.2s infinite',opacity:0.6}}>🍿</span>
             </>}
             {c.key === 'shapes' && <>
               <span style={{position:'absolute',top:14,left:24,fontSize:20,animation:'cardFloat1 2s ease-in-out infinite',opacity:0.7}}>🔵</span>
@@ -1499,8 +1493,8 @@ const CARTOONS = [
   {id:'WlO2G0HzBPE',title:'CoComelon - Yes Yes Get Dressed Song'},
 ];
 
-function CartoonScreen({ onBack }) {
-  const [currentIdx, setCurrentIdx] = useState(0);
+function CartoonScreen({ onBack, startIdx = 0 }) {
+  const [currentIdx, setCurrentIdx] = useState(startIdx);
 
   const goNext = useCallback(() => {
     setCurrentIdx(prev => (prev + 1) % CARTOONS.length);
@@ -1889,13 +1883,151 @@ function ShapePoppers({ onBack }) {
   );
 }
 
+/* ─── CATEGORY MENU — diagonal split ─── */
+function CategoryMenu({ onGames, onCartoons }) {
+  useEffect(() => { startLullaby(); return stopLullaby; }, []);
+
+  return (
+    <div style={{position:'relative',zIndex:10,width:'100%',height:'100vh',overflow:'hidden'}}>
+      {/* Diagonal split — Games (left/top) */}
+      <div role="button" onClick={onGames}
+        style={{
+          position:'absolute',top:0,left:0,width:'100%',height:'100%',
+          clipPath:'polygon(0 0, 100% 0, 0 100%)',
+          background:'linear-gradient(135deg, #FF69B4, #A55EEA)',
+          cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',
+          transition:'filter 0.2s',zIndex:2
+        }}
+        onMouseDown={e => e.currentTarget.style.filter='brightness(1.15)'}
+        onMouseUp={e => e.currentTarget.style.filter='brightness(1)'}
+      >
+        <div style={{
+          transform:'translate(-25%, -20%)',textAlign:'center'
+        }}>
+          <div style={{fontSize:64,animation:'float 3s ease-in-out infinite'}}>🎮</div>
+          <div style={{
+            fontFamily:"'Fredoka One',cursive",fontSize:'clamp(28px,7vw,40px)',
+            color:'white',textShadow:'0 3px 15px rgba(0,0,0,0.2)',
+            marginTop:8
+          }}>Games</div>
+          <div style={{
+            fontFamily:"'Nunito',sans-serif",fontSize:14,color:'rgba(255,255,255,0.8)',
+            marginTop:4
+          }}>🎹 🫧 🔢 🎨 ⭐</div>
+        </div>
+      </div>
+
+      {/* Diagonal split — Cartoons (right/bottom) */}
+      <div role="button" onClick={onCartoons}
+        style={{
+          position:'absolute',top:0,left:0,width:'100%',height:'100%',
+          clipPath:'polygon(100% 0, 100% 100%, 0 100%)',
+          background:'linear-gradient(135deg, #87CEEB, #0ABDE3)',
+          cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',
+          transition:'filter 0.2s',zIndex:2
+        }}
+        onMouseDown={e => e.currentTarget.style.filter='brightness(1.15)'}
+        onMouseUp={e => e.currentTarget.style.filter='brightness(1)'}
+      >
+        <div style={{
+          transform:'translate(25%, 20%)',textAlign:'center'
+        }}>
+          <div style={{fontSize:64,animation:'float 3s ease-in-out 0.5s infinite'}}>📺</div>
+          <div style={{
+            fontFamily:"'Fredoka One',cursive",fontSize:'clamp(28px,7vw,40px)',
+            color:'white',textShadow:'0 3px 15px rgba(0,0,0,0.2)',
+            marginTop:8
+          }}>Cartoons</div>
+          <div style={{
+            fontFamily:"'Nunito',sans-serif",fontSize:14,color:'rgba(255,255,255,0.8)',
+            marginTop:4
+          }}>🎬 Baby Shows 🍿</div>
+        </div>
+      </div>
+
+      {/* Diagonal line sparkle */}
+      <div style={{
+        position:'absolute',top:0,left:0,width:'100%',height:'100%',
+        background:'linear-gradient(135deg, transparent 49%, rgba(255,255,255,0.4) 49.5%, rgba(255,255,255,0.4) 50.5%, transparent 51%)',
+        pointerEvents:'none',zIndex:3
+      }} />
+
+      {/* Center title */}
+      <div style={{
+        position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',
+        zIndex:4,pointerEvents:'none',textAlign:'center'
+      }}>
+        <div style={{
+          fontFamily:"'Fredoka One',cursive",fontSize:'clamp(18px,4.5vw,24px)',
+          color:'white',textShadow:'0 2px 12px rgba(0,0,0,0.4)',
+          background:'rgba(0,0,0,0.15)',padding:'8px 20px',borderRadius:30
+        }}>
+          Princess Aria's World 👑
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── CARTOON BROWSER — grid of cartoon tiles ─── */
+function CartoonBrowser({ onSelect, onBack }) {
+  return (
+    <div style={{position:'relative',zIndex:10,display:'flex',flexDirection:'column',
+      minHeight:'100vh',padding:'20px 16px',overflowY:'auto',
+      WebkitOverflowScrolling:'touch'}}>
+      <BackButton onClick={onBack} />
+      <div style={{
+        fontFamily:"'Fredoka One',cursive",fontSize:'clamp(24px,6vw,32px)',
+        color:'#FF69B4',textShadow:'0 0 10px rgba(255,105,180,0.3)',
+        textAlign:'center',marginTop:50,marginBottom:20
+      }}>
+        📺 Aria's Cartoons
+      </div>
+      <div style={{
+        display:'grid',gridTemplateColumns:'repeat(2, 1fr)',
+        gap:12
+      }}>
+        {CARTOONS.map((c, i) => (
+          <div key={c.id} role="button" onClick={() => onSelect(i)}
+            style={{
+              background:'linear-gradient(135deg, rgba(135,206,235,0.3), rgba(174,214,241,0.3))',
+              borderRadius:20,padding:14,cursor:'pointer',
+              boxShadow:'0 4px 12px rgba(0,0,0,0.08)',
+              display:'flex',flexDirection:'column',alignItems:'center',
+              justifyContent:'center',minHeight:100,
+              transition:'transform 0.15s, box-shadow 0.15s',
+              border:'2px solid rgba(255,255,255,0.3)'
+            }}
+            onMouseDown={e => e.currentTarget.style.transform='scale(0.95)'}
+            onMouseUp={e => e.currentTarget.style.transform='scale(1)'}
+          >
+            <span style={{fontSize:36,marginBottom:6}}>
+              {c.title.includes('Hey Bear') ? '🐻' : c.title.includes('Pinkfong') ? '🦈' : '👶'}
+            </span>
+            <span style={{
+              fontFamily:"'Nunito',sans-serif",fontSize:'clamp(11px,3vw,14px)',
+              fontWeight:700,color:'#444',textAlign:'center',lineHeight:1.2
+            }}>{c.title}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{height:20}} />
+    </div>
+  );
+}
+
 /* ─── MAIN APP ─── */
 function App() {
   const [screen, setScreen] = useState('splash');
+  const [cartoonIdx, setCartoonIdx] = useState(0);
 
   const navigate = useCallback((s) => {
     stopLullaby();
     setScreen(s);
+  }, []);
+
+  const goCategory = useCallback(() => {
+    setScreen('category');
   }, []);
 
   const goHome = useCallback(() => {
@@ -1913,13 +2045,15 @@ function App() {
         position:'relative',zIndex:10,width:'100%',height:'100%',
         maxWidth:430,margin:'0 auto',overflowY:'auto',overflowX:'hidden'
       }}>
-        {screen === 'splash' && <SplashScreen onDone={() => setScreen('home')} />}
-        {screen === 'home' && <HomeScreen onNavigate={navigate} />}
+        {screen === 'splash' && <SplashScreen onDone={() => setScreen('category')} />}
+        {screen === 'category' && <CategoryMenu onGames={() => setScreen('home')} onCartoons={() => setScreen('cartoon-browser')} />}
+        {screen === 'home' && <HomeScreen onNavigate={navigate} onBack={goCategory} />}
+        {screen === 'cartoon-browser' && <CartoonBrowser onSelect={(i) => { setCartoonIdx(i); setScreen('cartoons'); }} onBack={goCategory} />}
         {screen === 'piano' && <PianoScreen onBack={goHome} />}
         {screen === 'bubbles' && <BubbleScreen onBack={goHome} />}
         {screen === 'numbers' && <NumbersScreen onBack={goHome} />}
         {screen === 'draw' && <DrawScreen onBack={goHome} />}
-        {screen === 'cartoons' && <CartoonScreen onBack={goHome} />}
+        {screen === 'cartoons' && <CartoonScreen onBack={() => setScreen('cartoon-browser')} startIdx={cartoonIdx} />}
         {screen === 'shapes' && <ShapePoppers onBack={goHome} />}
       </div>
     </div>
