@@ -601,8 +601,9 @@ function PianoScreen({ onBack }) {
   const keyHeight = Math.min(48, (window.innerHeight - 100) / whiteKeys.length);
 
   return (
-    <div style={{position:'relative',zIndex:10,minHeight:'100vh',display:'flex',
-      flexDirection:'column',alignItems:'center',paddingTop:60}}>
+    <div style={{position:'fixed',inset:0,zIndex:10,display:'flex',
+      flexDirection:'column',alignItems:'center',paddingTop:60,
+      overflow:'hidden',touchAction:'none',overscrollBehavior:'none'}}>
       <BackButton onClick={onBack} />
       <Particles particles={particles} />
 
@@ -777,7 +778,7 @@ function BubbleScreen({ onBack }) {
   }, [burst]);
 
   return (
-    <div style={{position:'relative',zIndex:10,minHeight:'100vh',overflow:'hidden'}}>
+    <div style={{position:'fixed',inset:0,zIndex:10,overflow:'hidden',touchAction:'none',overscrollBehavior:'none'}}>
       <BackButton onClick={onBack} />
       <Particles particles={particles} />
       <PopRings rings={rings} />
@@ -876,8 +877,9 @@ function NumbersScreen({ onBack }) {
 
   if (completed) {
     return (
-      <div style={{position:'relative',zIndex:10,minHeight:'100vh',display:'flex',
-        flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
+      <div style={{position:'fixed',inset:0,zIndex:10,display:'flex',
+        flexDirection:'column',alignItems:'center',justifyContent:'center',
+        overflow:'hidden',touchAction:'none',overscrollBehavior:'none'}}>
         <BackButton onClick={onBack} />
         <Particles particles={particles} />
         {/* confetti rain */}
@@ -921,8 +923,9 @@ function NumbersScreen({ onBack }) {
   ));
 
   return (
-    <div style={{position:'relative',zIndex:10,minHeight:'100vh',display:'flex',
-      flexDirection:'column',alignItems:'center',paddingTop:70}}>
+    <div style={{position:'fixed',inset:0,zIndex:10,display:'flex',
+      flexDirection:'column',alignItems:'center',paddingTop:70,
+      overflow:'hidden',touchAction:'none',overscrollBehavior:'none'}}>
       <BackButton onClick={onBack} />
       <Particles particles={particles} />
 
