@@ -517,7 +517,9 @@ function HomeScreen({ onNavigate }) {
     { key:'numbers', emoji:'🔢', label:'Learn Numbers', grad:'linear-gradient(135deg,#FECA57,#FF69B4)',
       shadow:'0 8px 30px rgba(254,202,87,0.4)' },
     { key:'draw', emoji:'🎨', label:'Draw & Color!', grad:'linear-gradient(135deg,#B2F2BB,#0ABDE3)',
-      shadow:'0 8px 30px rgba(178,242,187,0.4)' }
+      shadow:'0 8px 30px rgba(178,242,187,0.4)' },
+    { key:'cartoons', emoji:'📺', label:'Watch Cartoons', grad:'linear-gradient(135deg,#A55EEA,#FF69B4)',
+      shadow:'0 8px 30px rgba(165,94,234,0.4)' }
   ];
 
   return (
@@ -576,6 +578,11 @@ function HomeScreen({ onNavigate }) {
               <span style={{position:'absolute',top:12,left:20,fontSize:20,animation:'cardFloat1 2.2s ease-in-out infinite',opacity:0.7}}>🖌️</span>
               <span style={{position:'absolute',top:20,right:25,fontSize:18,animation:'cardFloat2 2.8s ease-in-out infinite',opacity:0.7}}>🌈</span>
               <span style={{position:'absolute',bottom:18,left:45,fontSize:16,animation:'cardBounce 2s ease-in-out 0.3s infinite',opacity:0.6}}>✏️</span>
+            </>}
+            {c.key === 'cartoons' && <>
+              <span style={{position:'absolute',top:15,left:25,fontSize:20,animation:'cardFloat1 2s ease-in-out infinite',opacity:0.7}}>⭐</span>
+              <span style={{position:'absolute',top:20,right:30,fontSize:18,animation:'cardFloat2 2.5s ease-in-out infinite',opacity:0.7}}>🎬</span>
+              <span style={{position:'absolute',bottom:15,left:50,fontSize:16,animation:'cardBounce 2.2s ease-in-out 0.2s infinite',opacity:0.6}}>🍿</span>
             </>}
             <span style={{fontSize:48,zIndex:2}}>{c.emoji}</span>
             <span style={{fontFamily:"'Fredoka One',cursive",fontSize:24,color:'white',
@@ -1412,6 +1419,151 @@ function DrawScreen({ onBack }) {
   );
 }
 
+/* ─── CARTOONS SCREEN — TikTok-style vertical swipe ─── */
+const CARTOONS = [
+  {id:'75p-N9YKqNo',title:'CoComelon - Wheels on the Bus'},
+  {id:'e_04ZrNroTo',title:'Pinkfong - Baby Shark Dance'},
+  {id:'0j6k5K1amXI',title:'Hey Bear Sensory - Rainbow Dance Party'},
+  {id:'EC_653pH7Yk',title:'Hey Bear Sensory - Funky Veggies'},
+  {id:'QoKh4cH3lAY',title:'Hey Bear Sensory - Colourful Fruit'},
+  {id:'tVlcKp3bWH8',title:'CoComelon - ABC Song'},
+  {id:'JMR7aOnSxbM',title:'Hey Bear Sensory - Happy Bees'},
+  {id:'wP-kIXxirJk',title:'Hey Bear Sensory - Bedtime'},
+  {id:'UFcJmOs8DRQ',title:'Pinkfong - Five Little Monkeys'},
+  {id:'BsSjMkMOmEg',title:'Hey Bear Sensory - Lovely Fruit'},
+  {id:'2ykP_jW1A44',title:'Hey Bear Sensory - Dancing Veggies'},
+  {id:'SPNLhKBX4u0',title:'CoComelon - Bath Song'},
+];
+
+function CartoonScreen({ onBack }) {
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const touchStartY = useRef(null);
+  const swiping = useRef(false);
+  const [swipeDir, setSwipeDir] = useState(null);
+
+  const goNext = useCallback(() => {
+    setSwipeDir('up');
+    setTimeout(() => {
+      setCurrentIdx(prev => (prev + 1) % CARTOONS.length);
+      setSwipeDir(null);
+    }, 250);
+  }, []);
+
+  const goPrev = useCallback(() => {
+    setSwipeDir('down');
+    setTimeout(() => {
+      setCurrentIdx(prev => (prev - 1 + CARTOONS.length) % CARTOONS.length);
+      setSwipeDir(null);
+    }, 250);
+  }, []);
+
+  const handleTouchStart = useCallback((e) => {
+    touchStartY.current = e.touches[0].clientY;
+    swiping.current = false;
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    if (touchStartY.current === null) return;
+    const diff = touchStartY.current - e.touches[0].clientY;
+    if (Math.abs(diff) > 60 && !swiping.current) {
+      swiping.current = true;
+      if (diff > 0) goNext();
+      else goPrev();
+    }
+  }, [goNext, goPrev]);
+
+  const handleTouchEnd = useCallback(() => {
+    touchStartY.current = null;
+    swiping.current = false;
+  }, []);
+
+  const video = CARTOONS[currentIdx];
+  const nextVideo = CARTOONS[(currentIdx + 1) % CARTOONS.length];
+
+  return (
+    <div data-game-lock style={{position:'fixed',inset:0,zIndex:10,display:'flex',flexDirection:'column',
+      overflow:'hidden',background:'#000'}}>
+      <BackButton onClick={onBack} />
+
+      {/* Swipe area */}
+      <div style={{flex:1,position:'relative',overflow:'hidden'}}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Current video */}
+        <div style={{
+          position:'absolute',inset:0,
+          transition: swipeDir ? 'transform 0.25s ease-out, opacity 0.25s ease-out' : 'none',
+          transform: swipeDir === 'up' ? 'translateY(-100%)' : swipeDir === 'down' ? 'translateY(100%)' : 'translateY(0)',
+          opacity: swipeDir ? 0 : 1
+        }}>
+          <iframe
+            key={video.id}
+            src={`https://www.youtube.com/embed/${video.id}?autoplay=1&mute=0&playsinline=1&rel=0&modestbranding=1&controls=1`}
+            style={{width:'100%',height:'100%',border:'none'}}
+            allow="autoplay; encrypted-media; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+
+        {/* Video title overlay */}
+        <div style={{
+          position:'absolute',bottom:80,left:16,right:16,zIndex:20,
+          pointerEvents:'none'
+        }}>
+          <div style={{
+            fontFamily:"'Fredoka One',cursive",fontSize:18,color:'white',
+            textShadow:'0 2px 8px rgba(0,0,0,0.7)',
+            lineHeight:1.3
+          }}>
+            {video.title}
+          </div>
+          <div style={{
+            fontFamily:"'Nunito',sans-serif",fontSize:13,color:'rgba(255,255,255,0.7)',
+            marginTop:4
+          }}>
+            {currentIdx + 1} / {CARTOONS.length} — Swipe up for next
+          </div>
+        </div>
+
+        {/* Swipe hint arrows */}
+        <div style={{
+          position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',
+          display:'flex',flexDirection:'column',gap:20,zIndex:20,pointerEvents:'none'
+        }}>
+          {currentIdx > 0 && (
+            <div style={{
+              width:36,height:36,borderRadius:'50%',
+              background:'rgba(255,255,255,0.15)',
+              display:'flex',alignItems:'center',justifyContent:'center',
+              fontSize:18,color:'white'
+            }}>▲</div>
+          )}
+          <div style={{
+            width:36,height:36,borderRadius:'50%',
+            background:'rgba(255,255,255,0.15)',
+            display:'flex',alignItems:'center',justifyContent:'center',
+            fontSize:18,color:'white',
+            animation:'pulse 2s ease-in-out infinite'
+          }}>▼</div>
+        </div>
+      </div>
+
+      {/* Next up bar */}
+      <div style={{
+        padding:'10px 16px',background:'rgba(255,182,193,0.15)',
+        display:'flex',alignItems:'center',gap:10
+      }}>
+        <span style={{fontSize:16}}>⏭️</span>
+        <span style={{fontFamily:"'Nunito',sans-serif",fontSize:13,color:'#FFB6C1'}}>
+          Next: {nextVideo.title}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 /* ─── MAIN APP ─── */
 function App() {
   const [screen, setScreen] = useState('splash');
@@ -1442,6 +1594,7 @@ function App() {
         {screen === 'bubbles' && <BubbleScreen onBack={goHome} />}
         {screen === 'numbers' && <NumbersScreen onBack={goHome} />}
         {screen === 'draw' && <DrawScreen onBack={goHome} />}
+        {screen === 'cartoons' && <CartoonScreen onBack={goHome} />}
       </div>
     </div>
   );
