@@ -1209,7 +1209,7 @@ function DrawScreen({ onBack }) {
           {DRAW_COLORS.map(c => (
             <div key={c.color} role="button"
               onClick={() => { setSelectedColor(c.color); setMixMode(false); }}
-              onTouchStart={(e) => { e.preventDefault(); setSelectedColor(c.color); setMixMode(false); }}
+              onTouchStart={() => { setSelectedColor(c.color); setMixMode(false); }}
               style={{
                 width:44,height:44,borderRadius:14,background:c.color,cursor:'pointer',
                 border: !mixMode && selectedColor === c.color ? '3px solid #FFD700' : '3px solid rgba(255,255,255,0.5)',
@@ -1227,7 +1227,7 @@ function DrawScreen({ onBack }) {
           {/* Mix colors button */}
           <div role="button"
             onClick={() => setMixMode(!mixMode)}
-            onTouchStart={(e) => { e.preventDefault(); setMixMode(!mixMode); }}
+            onTouchStart={() => setMixMode(!mixMode)}
             style={{
               width:44,height:44,borderRadius:14,cursor:'pointer',
               background: 'linear-gradient(135deg,#FF4444,#4488FF,#44CC44,#A55EEA)',
