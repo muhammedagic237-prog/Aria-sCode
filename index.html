@@ -95,52 +95,26 @@ function playNote(freq, duration = 0.5, type = 'triangle') {
 function playPop() {
   const ctx = getAudioContext();
   const t = ctx.currentTime;
-  // Initial sharp "pop" attack — short sine burst with fast pitch drop
-  const pop = ctx.createOscillator();
-  pop.type = 'sine';
-  pop.frequency.setValueAtTime(600, t);
-  pop.frequency.exponentialRampToValueAtTime(80, t + 0.06);
-  const popGain = ctx.createGain();
-  popGain.gain.setValueAtTime(0.4, t);
-  popGain.gain.exponentialRampToValueAtTime(0.01, t + 0.08);
-  pop.connect(popGain);
-  popGain.connect(ctx.destination);
-  pop.start(t);
-  pop.stop(t + 0.1);
-  // Bright "snap" overtone
-  const snap = ctx.createOscillator();
-  snap.type = 'square';
-  snap.frequency.setValueAtTime(1200, t);
-  snap.frequency.exponentialRampToValueAtTime(200, t + 0.03);
-  const snapGain = ctx.createGain();
-  snapGain.gain.setValueAtTime(0.15, t);
-  snapGain.gain.exponentialRampToValueAtTime(0.01, t + 0.04);
-  snap.connect(snapGain);
-  snapGain.connect(ctx.destination);
-  snap.start(t);
-  snap.stop(t + 0.05);
-  // Filtered noise burst for the "splashy" texture
-  const bufLen = ctx.sampleRate * 0.12;
-  const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
-  const data = buf.getChannelData(0);
-  for (let i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufLen, 2);
-  const noise = ctx.createBufferSource();
-  noise.buffer = buf;
-  const hp = ctx.createBiquadFilter();
-  hp.type = 'highpass';
-  hp.frequency.value = 2000;
-  const lp = ctx.createBiquadFilter();
-  lp.type = 'lowpass';
-  lp.frequency.setValueAtTime(6000, t);
-  lp.frequency.exponentialRampToValueAtTime(500, t + 0.12);
-  const nGain = ctx.createGain();
-  nGain.gain.setValueAtTime(0.3, t);
-  nGain.gain.exponentialRampToValueAtTime(0.01, t + 0.12);
-  noise.connect(hp);
-  hp.connect(lp);
-  lp.connect(nGain);
-  nGain.connect(ctx.destination);
-  noise.start(t);
+  // Gentle ascending chime — two soft tones
+  const freq = 500 + Math.random() * 200;
+  const o1 = ctx.createOscillator(); o1.type = 'sine';
+  o1.frequency.setValueAtTime(freq, t);
+  o1.frequency.linearRampToValueAtTime(freq * 1.3, t + 0.12);
+  const g1 = ctx.createGain();
+  g1.gain.setValueAtTime(0, t);
+  g1.gain.linearRampToValueAtTime(0.18, t + 0.02);
+  g1.gain.linearRampToValueAtTime(0, t + 0.2);
+  o1.connect(g1); g1.connect(ctx.destination);
+  o1.start(t); o1.stop(t + 0.22);
+  // Soft sparkle overtone
+  const o2 = ctx.createOscillator(); o2.type = 'sine';
+  o2.frequency.setValueAtTime(freq * 2, t + 0.03);
+  const g2 = ctx.createGain();
+  g2.gain.setValueAtTime(0, t + 0.03);
+  g2.gain.linearRampToValueAtTime(0.08, t + 0.05);
+  g2.gain.linearRampToValueAtTime(0, t + 0.18);
+  o2.connect(g2); g2.connect(ctx.destination);
+  o2.start(t + 0.03); o2.stop(t + 0.2);
 }
 
 function playChime() {
@@ -994,18 +968,22 @@ function BubbleScreen({ onBack }) {
     setBubbles(prev => prev.filter(bb => bb.id !== b.id));
     popCount.current++;
     const isMega = popCount.current % 5 === 0;
-    playPop();
     if (isMega) {
-      // MEGA POP — huge burst + stars + pink shockwave
-      burst(cx, cy, 90, [...popColors, '#FFD700','#FFFFFF','#FF69B4']);
-      setTimeout(() => burst(cx, cy, 50, ['#FFD700','#FFFFFF','#FFB6C1','#FF69B4','#E6CCFF']), 100);
-      setTimeout(() => burst(cx, cy, 30, ['#FFD700','#FFFFFF']), 200);
+      // MEGA chime — happy ascending arpeggio
+      playChime();
+      setTimeout(() => playChime(), 150);
+      // MEGA POP — massive colorful burst
+      const megaColors = ['#FF69B4','#FFD700','#00BFFF','#FF6B6B','#A55EEA','#48DBFB','#FECA57','#00D68F','#FF9F43','#FFFFFF','#E6CCFF','#32CD32'];
+      burst(cx, cy, 120, megaColors);
+      setTimeout(() => burst(cx, cy, 70, megaColors), 80);
+      setTimeout(() => burst(cx, cy, 50, ['#FFD700','#FFFFFF','#FF69B4','#00BFFF']), 160);
+      setTimeout(() => burst(cx, cy, 30, ['#FFD700','#FFFFFF']), 250);
       // Big baby pink shockwave
       const waveId = Date.now();
       setMegaWave({id:waveId, x:cx, y:cy});
       setTimeout(() => setMegaWave(null), 1200);
-      // Floating stars
-      const newStars = Array.from({length:12}, () => ({
+      // Lots of floating stars
+      const newStars = Array.from({length:20}, () => ({
         id: starId.current++,
         x: cx + (Math.random()-0.5) * 160,
         y: cy + (Math.random()-0.5) * 160,
@@ -1015,6 +993,7 @@ function BubbleScreen({ onBack }) {
       setFloatingStars(prev => [...prev, ...newStars]);
       setTimeout(() => setFloatingStars(prev => prev.filter(s => !newStars.includes(s))), 1500);
     } else {
+      playPop();
       burst(cx, cy, 55, popColors);
       setTimeout(() => burst(cx, cy, 25, ['#FFD700','#FFFFFF','#FF69B4','#00E0FF','#FECA57','#7C5CFC']), 80);
     }
