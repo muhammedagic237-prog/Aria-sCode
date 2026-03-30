@@ -241,10 +241,16 @@ function InjectStyles() {
       }
       @keyframes bubbleRise {
         0%{transform:translateY(0) translateX(0)}
-        25%{transform:translateY(-25%) translateX(15px)}
-        50%{transform:translateY(-50%) translateX(-15px)}
-        75%{transform:translateY(-75%) translateX(10px)}
+        10%{transform:translateY(0) translateX(0)}
+        35%{transform:translateY(-25vh) translateX(18px)}
+        55%{transform:translateY(-50vh) translateX(-18px)}
+        75%{transform:translateY(-75vh) translateX(12px)}
         100%{transform:translateY(-120vh) translateX(0)}
+      }
+      @keyframes popFog {
+        0%{transform:scale(0.3);opacity:0.7;filter:blur(8px)}
+        40%{transform:scale(2.5);opacity:0.5;filter:blur(18px)}
+        100%{transform:scale(4);opacity:0;filter:blur(30px)}
       }
       @keyframes popRing {
         0%{transform:scale(0);opacity:0.8}100%{transform:scale(3);opacity:0}
@@ -831,12 +837,15 @@ function BubbleScreen({ onBack }) {
   const [score, setScore] = useState(0);
   const [scoreBounce, setScoreBounce] = useState(false);
   const [rings, setRings] = useState([]);
+  const [fogClouds, setFogClouds] = useState([]);
   const { particles, burst } = useParticles();
   const bubbleId = useRef(0);
   const ringId = useRef(0);
+  const fogId = useRef(0);
 
   const pastelColors = ['#FFB6C1','#AED6F1','#E6CCFF','#B2F2BB','#FFF9C4','#FFDAB9'];
   const popColors = ['#FF69B4','#0ABDE3','#5F6AFF','#FFD700','#FF6B6B','#48DBFB','#A55EEA','#00D2D3','#FF9F43','#FECA57','#00D68F','#FF3E7F','#7C5CFC','#00E0FF'];
+  const fogColors = ['#FF69B4','#FFB6C1','#E6CCFF','#AED6F1','#FF9F43','#FECA57','#A55EEA','#87CEEB','#FFD700'];
 
   // Spawn bubbles
   useEffect(() => {
@@ -849,7 +858,7 @@ function BubbleScreen({ onBack }) {
           x: 10 + Math.random() * 70,
           size,
           color: pastelColors[Math.floor(Math.random() * pastelColors.length)],
-          speed: 3 + Math.random() * 4,
+          speed: 6 + Math.random() * 8,
           born: Date.now()
         }];
       });
@@ -878,6 +887,17 @@ function BubbleScreen({ onBack }) {
     const rid = ringId.current++;
     setRings(prev => [...prev, {id:rid, x:cx, y:cy}]);
     setTimeout(() => setRings(prev => prev.filter(r => r.id !== rid)), 600);
+    // Spawn fog clouds
+    const newFog = Array.from({length:5}, () => ({
+      id: fogId.current++,
+      x: cx + (Math.random()-0.5) * 40,
+      y: cy + (Math.random()-0.5) * 40,
+      size: 40 + Math.random() * 50,
+      color: fogColors[Math.floor(Math.random() * fogColors.length)],
+      dur: 800 + Math.random() * 500
+    }));
+    setFogClouds(prev => [...prev, ...newFog]);
+    setTimeout(() => setFogClouds(prev => prev.filter(f => !newFog.includes(f))), 1400);
     setScore(prev => prev + 1);
     setScoreBounce(true);
     setTimeout(() => setScoreBounce(false), 300);
@@ -888,6 +908,20 @@ function BubbleScreen({ onBack }) {
       <BackButton onClick={onBack} />
       <Particles particles={particles} />
       <PopRings rings={rings} />
+
+      {/* Fog clouds */}
+      <div style={{position:'fixed',inset:0,pointerEvents:'none',zIndex:48}}>
+        {fogClouds.map(f => (
+          <div key={f.id} style={{
+            position:'absolute',
+            left: f.x - f.size/2, top: f.y - f.size/2,
+            width: f.size, height: f.size,
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${f.color}cc, ${f.color}44, transparent)`,
+            animation: `popFog ${f.dur}ms ease-out forwards`
+          }} />
+        ))}
+      </div>
 
       {/* Score */}
       <div style={{
