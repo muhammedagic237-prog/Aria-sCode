@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>Aria's Code</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -10,6 +12,7 @@
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html { touch-action:manipulation; -ms-touch-action:manipulation; }
   html, body, #root { width:100%; height:100%; overflow:hidden; }
 </style>
 </head>
@@ -151,9 +154,21 @@ function stopLullaby() {
 function speakNumber(word) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(word);
-  u.rate = 0.85; u.pitch = 1.2;
-  window.speechSynthesis.speak(u);
+  const speak = () => {
+    const u = new SpeechSynthesisUtterance(word);
+    u.rate = 0.85; u.pitch = 1.2; u.volume = 1;
+    const voices = window.speechSynthesis.getVoices();
+    const english = voices.find(v => v.lang.startsWith('en') && v.name.includes('Female'))
+      || voices.find(v => v.lang.startsWith('en'))
+      || voices[0];
+    if (english) u.voice = english;
+    window.speechSynthesis.speak(u);
+  };
+  if (window.speechSynthesis.getVoices().length === 0) {
+    window.speechSynthesis.onvoiceschanged = () => { speak(); window.speechSynthesis.onvoiceschanged = null; };
+  } else {
+    speak();
+  }
 }
 
 /* ─── Inject global styles ─── */
@@ -241,13 +256,17 @@ function InjectStyles() {
       @keyframes scoreBounce {
         0%{transform:scale(1)}50%{transform:scale(1.4)}100%{transform:scale(1)}
       }
-      body {
+      body, html {
         font-family: 'Nunito', sans-serif;
         overflow: hidden;
         touch-action: manipulation;
+        -ms-touch-action: manipulation;
         user-select: none;
         -webkit-user-select: none;
+        -webkit-text-size-adjust: 100%;
+        -ms-content-zooming: none;
       }
+      * { touch-action: manipulation; }
     `;
     document.head.appendChild(style);
     return () => { document.head.removeChild(style); document.head.removeChild(link); };
@@ -542,96 +561,151 @@ function BackButton({ onClick }) {
 function PianoScreen({ onBack }) {
   const { particles, burst } = useParticles();
   const [floatingNotes, setFloatingNotes] = useState([]);
+  const [glowKeys, setGlowKeys] = useState({});
+  const [trailSparks, setTrailSparks] = useState([]);
   const noteIdRef = useRef(0);
+  const sparkIdRef = useRef(0);
 
-  const handleKey = useCallback((freq, x, y, color) => {
+  const handleKey = useCallback((freq, x, y, color, noteIdx) => {
     playNote(freq, 0.6);
-    burst(x, y, 15, [color, '#FFD700', '#FF69B4', '#87CEEB', '#FFFFFF', '#A55EEA']);
-    const id = noteIdRef.current++;
-    const emoji = Math.random() > 0.5 ? '🎵' : '🎶';
-    setFloatingNotes(prev => [...prev, {id, x, y, emoji}]);
-    setTimeout(() => setFloatingNotes(prev => prev.filter(n => n.id !== id)), 1000);
+    // Big colorful burst — 35 particles in rainbow + key color
+    burst(x, y, 35, [color, '#FFD700', '#FF69B4', '#87CEEB', '#FFFFFF', '#A55EEA', '#00D2D3', '#FECA57', '#FF6B6B', '#5F6AFF']);
+    // Second delayed mini burst for extra sparkle
+    setTimeout(() => burst(x + (Math.random()-0.5)*40, y + (Math.random()-0.5)*20, 15,
+      ['#FFD700','#FFFFFF','#FF69B4','#87CEEB']), 100);
+    // Floating note emojis — spawn 3 at slightly different positions
+    const emojis = ['🎵','🎶','✨','⭐','💫'];
+    for (let j = 0; j < 3; j++) {
+      const id = noteIdRef.current++;
+      const emoji = emojis[Math.floor(Math.random()*emojis.length)];
+      const ox = x + (Math.random()-0.5)*60;
+      setFloatingNotes(prev => [...prev, {id, x:ox, y:y-10, emoji}]);
+      setTimeout(() => setFloatingNotes(prev => prev.filter(n => n.id !== id)), 1200);
+    }
+    // Shimmering trail sparks along the key
+    const newSparks = Array.from({length:8}, () => ({
+      id: sparkIdRef.current++,
+      x: x + (Math.random()-0.5)*120,
+      y: y + (Math.random()-0.5)*20,
+      color: [color,'#FFD700','#FFFFFF','#FF69B4'][Math.floor(Math.random()*4)],
+      size: 3 + Math.random()*6
+    }));
+    setTrailSparks(prev => [...prev, ...newSparks]);
+    setTimeout(() => setTrailSparks(prev => prev.filter(s => !newSparks.includes(s))), 800);
+    // Glow effect on key
+    setGlowKeys(prev => ({...prev, [noteIdx]: color}));
+    setTimeout(() => setGlowKeys(prev => { const n = {...prev}; delete n[noteIdx]; return n; }), 400);
   }, [burst]);
 
   const whiteKeys = PIANO_KEYS;
-  const keyWidth = 60;
-  const keyHeight = Math.min(50, (window.innerHeight - 100) / whiteKeys.length);
-  const totalHeight = whiteKeys.length * keyHeight;
+  const keyHeight = Math.min(48, (window.innerHeight - 100) / whiteKeys.length);
 
   return (
     <div style={{position:'relative',zIndex:10,minHeight:'100vh',display:'flex',
-      flexDirection:'column',alignItems:'center',paddingTop:70}}>
+      flexDirection:'column',alignItems:'center',paddingTop:60}}>
       <BackButton onClick={onBack} />
       <Particles particles={particles} />
 
       {/* floating notes */}
       {floatingNotes.map(n => (
         <div key={n.id} style={{
-          position:'fixed',left:n.x,top:n.y,fontSize:32,pointerEvents:'none',zIndex:51,
-          animation:'noteFloat 1s ease-out forwards'
+          position:'fixed',left:n.x,top:n.y,fontSize:28+Math.random()*12,pointerEvents:'none',zIndex:51,
+          animation:'noteFloat 1.2s ease-out forwards'
         }}>{n.emoji}</div>
       ))}
 
+      {/* trail sparks */}
+      {trailSparks.map(s => (
+        <div key={s.id} style={{
+          position:'fixed',left:s.x,top:s.y,width:s.size,height:s.size,
+          borderRadius:'50%',background:s.color,pointerEvents:'none',zIndex:51,
+          animation:'sparkle 0.8s ease-out forwards',
+          boxShadow:`0 0 ${s.size*2}px ${s.color}`
+        }} />
+      ))}
+
       <div style={{fontFamily:"'Fredoka One',cursive",fontSize:28,color:'#FF69B4',
-        textShadow:'0 0 10px rgba(255,105,180,0.3)',marginBottom:20}}>
+        textShadow:'0 0 10px rgba(255,105,180,0.3)',marginBottom:12}}>
         🎹 Piano
       </div>
 
-      <div style={{position:'relative',width:280,margin:'0 auto'}}>
+      <div style={{position:'relative',width:'90%',maxWidth:380,margin:'0 auto'}}>
         {/* White keys */}
-        {whiteKeys.map((k, i) => (
+        {whiteKeys.map((k, i) => {
+          const isGlowing = glowKeys[i];
+          return (
           <div key={k.note} role="button"
             onClick={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
-              handleKey(NOTE_FREQS[k.note], rect.left + rect.width/2, rect.top + rect.height/2, KEY_COLORS[i]);
+              handleKey(NOTE_FREQS[k.note], rect.left + rect.width/2, rect.top + rect.height/2, KEY_COLORS[i], i);
             }}
             onTouchStart={(e) => {
+              e.preventDefault();
               const rect = e.currentTarget.getBoundingClientRect();
-              handleKey(NOTE_FREQS[k.note], rect.left + rect.width/2, rect.top + rect.height/2, KEY_COLORS[i]);
+              handleKey(NOTE_FREQS[k.note], rect.left + rect.width/2, rect.top + rect.height/2, KEY_COLORS[i], i);
             }}
             style={{
-              width:220,height:keyHeight-2,marginBottom:2,
-              background:`linear-gradient(90deg, ${KEY_COLORS[i]}22, white 30%, white)`,
-              borderRadius:'0 16px 16px 0',
-              border:`2px solid ${KEY_COLORS[i]}44`,
-              boxShadow:`0 2px 8px ${KEY_COLORS[i]}33, inset 0 -2px 4px rgba(0,0,0,0.05)`,
+              width:'100%',height:keyHeight-2,marginBottom:2,
+              background: isGlowing
+                ? `linear-gradient(90deg, ${KEY_COLORS[i]}66, ${KEY_COLORS[i]}33, white 60%, white)`
+                : `linear-gradient(90deg, ${KEY_COLORS[i]}22, white 30%, white)`,
+              borderRadius:'0 20px 20px 0',
+              border:`2px solid ${KEY_COLORS[i]}55`,
+              boxShadow: isGlowing
+                ? `0 0 30px ${KEY_COLORS[i]}aa, 0 0 60px ${KEY_COLORS[i]}44, inset 0 0 20px ${KEY_COLORS[i]}22`
+                : `0 2px 10px ${KEY_COLORS[i]}33, inset 0 -2px 4px rgba(0,0,0,0.05)`,
               display:'flex',alignItems:'center',justifyContent:'flex-end',paddingRight:20,
-              cursor:'pointer',transition:'transform 0.1s, box-shadow 0.1s',
-              fontFamily:"'Fredoka One',cursive",fontSize:14,color:KEY_COLORS[i],
-              position:'relative',zIndex:1
+              cursor:'pointer',
+              transition:'transform 0.1s, box-shadow 0.15s, background 0.15s',
+              fontFamily:"'Fredoka One',cursive",fontSize:15,color:KEY_COLORS[i],
+              position:'relative',zIndex:1,
+              transform: isGlowing ? 'scale(0.96)' : 'scale(1)'
             }}
-            onMouseDown={e => {e.currentTarget.style.transform='scale(0.94)';e.currentTarget.style.boxShadow=`0 0 20px ${KEY_COLORS[i]}88`}}
-            onMouseUp={e => {e.currentTarget.style.transform='scale(1)';e.currentTarget.style.boxShadow=`0 2px 8px ${KEY_COLORS[i]}33`}}
+            onMouseDown={e => {e.currentTarget.style.transform='scale(0.94)';e.currentTarget.style.boxShadow=`0 0 25px ${KEY_COLORS[i]}88`}}
+            onMouseUp={e => {e.currentTarget.style.transform='scale(1)';e.currentTarget.style.boxShadow=`0 2px 10px ${KEY_COLORS[i]}33`}}
           >
+            {/* mini sparkle dot on key */}
+            <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',
+              width:8,height:8,borderRadius:'50%',
+              background:`radial-gradient(circle,${KEY_COLORS[i]},transparent)`,
+              opacity:0.6}} />
             {k.note}
           </div>
-        ))}
+          );
+        })}
 
         {/* Black keys */}
         {Object.entries(BLACK_KEYS_MAP).map(([idx, bk]) => {
           const i = parseInt(idx);
           const topPos = (i + 1) * keyHeight - keyHeight * 0.3;
+          const isGlowing = glowKeys['b'+i];
           return (
             <div key={bk.note} role="button"
               onClick={(e) => {
                 e.stopPropagation();
                 const rect = e.currentTarget.getBoundingClientRect();
-                handleKey(bk.freq, rect.left + rect.width/2, rect.top + rect.height/2, '#2D1B69');
+                handleKey(bk.freq, rect.left + rect.width/2, rect.top + rect.height/2, '#A55EEA', 'b'+i);
               }}
               onTouchStart={(e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 const rect = e.currentTarget.getBoundingClientRect();
-                handleKey(bk.freq, rect.left + rect.width/2, rect.top + rect.height/2, '#2D1B69');
+                handleKey(bk.freq, rect.left + rect.width/2, rect.top + rect.height/2, '#A55EEA', 'b'+i);
               }}
               style={{
                 position:'absolute',left:0,top:topPos,
-                width:140,height:keyHeight * 0.6,
-                background:'linear-gradient(90deg, #1a0a3e, #2D1B69)',
-                borderRadius:'0 12px 12px 0',
-                boxShadow:'2px 2px 10px rgba(0,0,0,0.3)',
-                display:'flex',alignItems:'center',justifyContent:'flex-end',paddingRight:12,
-                cursor:'pointer',transition:'transform 0.1s',zIndex:5,
-                fontFamily:"'Fredoka One',cursive",fontSize:11,color:'#E6CCFF'
+                width:'55%',height:keyHeight * 0.6,
+                background: isGlowing
+                  ? 'linear-gradient(90deg, #5F27CD, #A55EEA)'
+                  : 'linear-gradient(90deg, #1a0a3e, #2D1B69)',
+                borderRadius:'0 14px 14px 0',
+                boxShadow: isGlowing
+                  ? '0 0 25px rgba(165,94,234,0.7), 2px 2px 12px rgba(0,0,0,0.3)'
+                  : '2px 2px 10px rgba(0,0,0,0.3)',
+                display:'flex',alignItems:'center',justifyContent:'flex-end',paddingRight:14,
+                cursor:'pointer',transition:'transform 0.1s, box-shadow 0.15s',zIndex:5,
+                fontFamily:"'Fredoka One',cursive",fontSize:12,color:'#E6CCFF',
+                transform: isGlowing ? 'scale(0.94)' : 'scale(1)'
               }}
               onMouseDown={e => e.currentTarget.style.transform='scale(0.92)'}
               onMouseUp={e => e.currentTarget.style.transform='scale(1)'}
