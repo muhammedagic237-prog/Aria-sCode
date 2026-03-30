@@ -35,14 +35,10 @@ const NOTE_FREQS = {
 };
 
 const PIANO_KEYS = [
-  {note:'C3',black:false},{note:'D3',black:false},{note:'E3',black:false},
-  {note:'F3',black:false},{note:'G3',black:false},{note:'A3',black:false},
-  {note:'B3',black:false},{note:'C4',black:false},{note:'D4',black:false},
-  {note:'E4',black:false},{note:'F4',black:false},{note:'G4',black:false},
-  {note:'A4',black:false},{note:'B4',black:false},{note:'C5',black:false}
+  {note:'C3'},{note:'D3'},{note:'E3'},{note:'F3'},{note:'G3'},{note:'A3'},{note:'B3'},
+  {note:'C4'},{note:'D4'},{note:'E4'},{note:'F4'},{note:'G4'},{note:'A4'},{note:'B4'},{note:'C5'}
 ];
 
-const BLACK_KEY_INDICES = [1,2,4,5,6,8,9,11,12,13]; // positions between white keys
 const BLACK_KEYS_MAP = {
   0:{note:'C#3',freq:138.59},1:{note:'D#3',freq:155.56},
   3:{note:'F#3',freq:185.00},4:{note:'G#3',freq:207.65},5:{note:'A#3',freq:233.08},
@@ -204,9 +200,6 @@ function InjectStyles() {
       }
       @keyframes fadeIn {
         from{opacity:0}to{opacity:1}
-      }
-      @keyframes fadeOut {
-        from{opacity:1}to{opacity:0}
       }
       @keyframes glitterBurst {
         0%{transform:translate(0,0) scale(1);opacity:1}
@@ -473,7 +466,9 @@ function HomeScreen({ onNavigate }) {
     { key:'bubbles', emoji:'🫧', label:'Pop Bubbles!', grad:'linear-gradient(135deg,#87CEEB,#0ABDE3)',
       shadow:'0 8px 30px rgba(135,206,235,0.4)' },
     { key:'numbers', emoji:'🔢', label:'Learn Numbers', grad:'linear-gradient(135deg,#FECA57,#FF69B4)',
-      shadow:'0 8px 30px rgba(254,202,87,0.4)' }
+      shadow:'0 8px 30px rgba(254,202,87,0.4)' },
+    { key:'draw', emoji:'🎨', label:'Draw & Color!', grad:'linear-gradient(135deg,#B2F2BB,#0ABDE3)',
+      shadow:'0 8px 30px rgba(178,242,187,0.4)' }
   ];
 
   return (
@@ -526,6 +521,11 @@ function HomeScreen({ onNavigate }) {
                   animation:`cardBounce ${1.5+n*0.2}s ease-in-out ${n*0.15}s infinite`
                 }}>{n}</span>
               ))}
+            </>}
+            {c.key === 'draw' && <>
+              <span style={{position:'absolute',top:12,left:20,fontSize:20,animation:'cardFloat1 2.2s ease-in-out infinite',opacity:0.7}}>🖌️</span>
+              <span style={{position:'absolute',top:20,right:25,fontSize:18,animation:'cardFloat2 2.8s ease-in-out infinite',opacity:0.7}}>🌈</span>
+              <span style={{position:'absolute',bottom:18,left:45,fontSize:16,animation:'cardBounce 2s ease-in-out 0.3s infinite',opacity:0.6}}>✏️</span>
             </>}
             <span style={{fontSize:48,zIndex:2}}>{c.emoji}</span>
             <span style={{fontFamily:"'Fredoka One',cursive",fontSize:24,color:'white',
@@ -912,18 +912,14 @@ function NumbersScreen({ onBack }) {
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
 
-    speakNumber(NUMBER_WORDS[currentNum]);
+    speakNumber("Number " + NUMBER_WORDS[currentNum]);
     playChime();
     burst(cx, cy, 50);
 
     if (currentNum >= 20) {
       setTimeout(() => {
         setCompleted(true);
-        if (window.speechSynthesis) {
-          const u = new SpeechSynthesisUtterance("Amazing! You know all your numbers!");
-          u.rate = 0.85; u.pitch = 1.2;
-          window.speechSynthesis.speak(u);
-        }
+        speakNumber("Amazing! You know all your numbers!");
         // confetti rain
         const newConfetti = Array.from({length:100}, () => ({
           id: confettiId.current++,
@@ -1078,6 +1074,192 @@ function NumbersScreen({ onBack }) {
   );
 }
 
+/* ─── DRAWING SCREEN ─── */
+const DRAW_COLORS = [
+  {name:'Red',color:'#FF4444'},
+  {name:'Pink',color:'#FF69B4'},
+  {name:'Blue',color:'#4488FF'},
+  {name:'Green',color:'#44CC44'},
+  {name:'Purple',color:'#A55EEA'},
+  {name:'Black',color:'#222222'}
+];
+const MIX_COLORS = ['#FF4444','#FF69B4','#4488FF','#44CC44','#A55EEA','#FF9F43','#FFD700','#0ABDE3'];
+
+function DrawScreen({ onBack }) {
+  const canvasRef = useRef(null);
+  const drawingRef = useRef(false);
+  const lastPosRef = useRef(null);
+  const [selectedColor, setSelectedColor] = useState('#FF69B4');
+  const [mixMode, setMixMode] = useState(false);
+  const mixColorRef = useRef('#FF4444');
+  const mixIndexRef = useRef(0);
+
+  // Mix colors timer — cycle every 300ms
+  useEffect(() => {
+    if (!mixMode) return;
+    const timer = setInterval(() => {
+      mixIndexRef.current = (mixIndexRef.current + 1) % MIX_COLORS.length;
+      mixColorRef.current = MIX_COLORS[mixIndexRef.current];
+    }, 300);
+    return () => clearInterval(timer);
+  }, [mixMode]);
+
+  const getColor = useCallback(() => {
+    return mixMode ? mixColorRef.current : selectedColor;
+  }, [mixMode, selectedColor]);
+
+  const getPos = useCallback((e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+  }, []);
+
+  const startDraw = useCallback((e) => {
+    e.preventDefault();
+    drawingRef.current = true;
+    const pos = getPos(e);
+    if (pos) lastPosRef.current = pos;
+  }, [getPos]);
+
+  const draw = useCallback((e) => {
+    e.preventDefault();
+    if (!drawingRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!ctx) return;
+    const pos = getPos(e);
+    if (!pos) return;
+    const last = lastPosRef.current || pos;
+    ctx.beginPath();
+    ctx.moveTo(last.x, last.y);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.strokeStyle = getColor();
+    ctx.lineWidth = 8;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+    lastPosRef.current = pos;
+  }, [getPos, getColor]);
+
+  const stopDraw = useCallback(() => {
+    drawingRef.current = false;
+    lastPosRef.current = null;
+  }, []);
+
+  const clearCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!ctx) return;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }, []);
+
+  // Initialize canvas white
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.width = 800;
+    canvas.height = 1000;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, 800, 1000);
+  }, []);
+
+  return (
+    <div style={{position:'fixed',inset:0,zIndex:10,display:'flex',flexDirection:'column',
+      overflow:'hidden',touchAction:'none',overscrollBehavior:'none'}}>
+      <BackButton onClick={onBack} />
+
+      {/* Title bar */}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,
+        paddingTop:14,paddingBottom:6}}>
+        <span style={{fontFamily:"'Fredoka One',cursive",fontSize:22,color:'#FF69B4',
+          textShadow:'0 0 10px rgba(255,105,180,0.3)'}}>
+          🎨 Draw & Color!
+        </span>
+        <div role="button" onClick={clearCanvas} onTouchStart={(e) => { e.preventDefault(); clearCanvas(); }}
+          style={{
+            background:'linear-gradient(135deg,#FF6B6B,#FF9F43)',
+            padding:'6px 16px',borderRadius:20,cursor:'pointer',
+            fontFamily:"'Fredoka One',cursive",fontSize:12,color:'white',
+            boxShadow:'0 3px 10px rgba(255,107,107,0.3)'
+          }}>
+          🗑️ Clear
+        </div>
+      </div>
+
+      <div style={{display:'flex',flex:1,overflow:'hidden'}}>
+        {/* Color palette sidebar */}
+        <div style={{width:64,display:'flex',flexDirection:'column',alignItems:'center',
+          gap:8,paddingTop:8,paddingBottom:8,overflowY:'auto'}}>
+          {DRAW_COLORS.map(c => (
+            <div key={c.color} role="button"
+              onClick={() => { setSelectedColor(c.color); setMixMode(false); }}
+              onTouchStart={(e) => { e.preventDefault(); setSelectedColor(c.color); setMixMode(false); }}
+              style={{
+                width:44,height:44,borderRadius:14,background:c.color,cursor:'pointer',
+                border: !mixMode && selectedColor === c.color ? '3px solid #FFD700' : '3px solid rgba(255,255,255,0.5)',
+                boxShadow: !mixMode && selectedColor === c.color
+                  ? `0 0 15px ${c.color}88, 0 0 5px #FFD700`
+                  : `0 2px 8px ${c.color}33`,
+                transition:'transform 0.15s, border 0.15s',
+                transform: !mixMode && selectedColor === c.color ? 'scale(1.1)' : 'scale(1)',
+                display:'flex',alignItems:'center',justifyContent:'center'
+              }}>
+              {!mixMode && selectedColor === c.color &&
+                <span style={{fontSize:16}}>✓</span>}
+            </div>
+          ))}
+          {/* Mix colors button */}
+          <div role="button"
+            onClick={() => setMixMode(!mixMode)}
+            onTouchStart={(e) => { e.preventDefault(); setMixMode(!mixMode); }}
+            style={{
+              width:44,height:44,borderRadius:14,cursor:'pointer',
+              background: 'linear-gradient(135deg,#FF4444,#4488FF,#44CC44,#A55EEA)',
+              border: mixMode ? '3px solid #FFD700' : '3px solid rgba(255,255,255,0.5)',
+              boxShadow: mixMode ? '0 0 15px rgba(255,215,0,0.5)' : '0 2px 8px rgba(0,0,0,0.15)',
+              transform: mixMode ? 'scale(1.1)' : 'scale(1)',
+              transition:'transform 0.15s, border 0.15s',
+              display:'flex',alignItems:'center',justifyContent:'center',
+              fontFamily:"'Fredoka One',cursive",fontSize:8,color:'white',
+              textShadow:'0 1px 3px rgba(0,0,0,0.5)'
+            }}>
+            MIX
+          </div>
+        </div>
+
+        {/* Canvas area */}
+        <div style={{flex:1,padding:'0 8px 8px 0',display:'flex'}}>
+          <canvas ref={canvasRef}
+            onMouseDown={startDraw}
+            onMouseMove={draw}
+            onMouseUp={stopDraw}
+            onMouseLeave={stopDraw}
+            onTouchStart={startDraw}
+            onTouchMove={draw}
+            onTouchEnd={stopDraw}
+            onTouchCancel={stopDraw}
+            style={{
+              width:'100%',height:'100%',
+              borderRadius:20,
+              boxShadow:'0 4px 20px rgba(0,0,0,0.1), inset 0 0 0 2px rgba(255,182,193,0.3)',
+              background:'white',
+              cursor:'crosshair',
+              touchAction:'none'
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── MAIN APP ─── */
 function App() {
   const [screen, setScreen] = useState('splash');
@@ -1107,6 +1289,7 @@ function App() {
         {screen === 'piano' && <PianoScreen onBack={goHome} />}
         {screen === 'bubbles' && <BubbleScreen onBack={goHome} />}
         {screen === 'numbers' && <NumbersScreen onBack={goHome} />}
+        {screen === 'draw' && <DrawScreen onBack={goHome} />}
       </div>
     </div>
   );
