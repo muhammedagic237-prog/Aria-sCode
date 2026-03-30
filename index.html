@@ -585,7 +585,7 @@ function HomeScreen({ onNavigate }) {
             onClick={() => { getAudioContext(); onNavigate(c.key); }}
             onTouchStart={() => {}}
             style={{
-              background:c.grad,height:180,borderRadius:30,
+              background:c.grad,height:'min(180px, 22vh)',borderRadius:30,
               display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
               boxShadow:c.shadow,cursor:'pointer',position:'relative',overflow:'hidden',
               transition:'transform 0.2s',
@@ -699,7 +699,7 @@ function PianoScreen({ onBack }) {
   }, [burst]);
 
   const whiteKeys = PIANO_KEYS;
-  const keyHeight = Math.min(48, (window.innerHeight - 100) / whiteKeys.length);
+  const keyHeight = Math.min(42, (window.innerHeight - 140) / whiteKeys.length);
   const [autoPlaying, setAutoPlaying] = useState(false);
   const autoPlayRef = useRef(null);
 
@@ -758,7 +758,7 @@ function PianoScreen({ onBack }) {
 
   return (
     <div data-game-lock style={{position:'fixed',inset:0,zIndex:10,display:'flex',
-      flexDirection:'column',alignItems:'center',paddingTop:60,
+      flexDirection:'column',alignItems:'center',paddingTop:'max(50px, env(safe-area-inset-top, 20px))',
       overflow:'hidden',touchAction:'none',overscrollBehavior:'none'}}>
       <BackButton onClick={onBack} />
       <Particles particles={particles} />
@@ -1180,14 +1180,14 @@ function NumbersScreen({ onBack }) {
 
   return (
     <div data-game-lock style={{position:'fixed',inset:0,zIndex:10,display:'flex',
-      flexDirection:'column',alignItems:'center',paddingTop:70,
+      flexDirection:'column',alignItems:'center',paddingTop:'max(50px, env(safe-area-inset-top, 20px))',
       overflow:'hidden',touchAction:'none',overscrollBehavior:'none'}}>
       <BackButton onClick={onBack} />
       <Particles particles={particles} />
 
       {/* Progress bar */}
       <div style={{
-        position:'absolute',top:16,right:16,left:100,height:12,borderRadius:8,
+        position:'absolute',top:16,right:16,left:80,height:12,borderRadius:8,
         background:'rgba(255,255,255,0.3)',overflow:'hidden',zIndex:40
       }}>
         <div style={{
@@ -1213,7 +1213,7 @@ function NumbersScreen({ onBack }) {
           onTouchEnd={() => speakNumber(NUMBER_WORDS[currentNum])}
           style={{
             fontFamily:"'Fredoka One',cursive",
-            fontSize:'clamp(140px,40vw,260px)',
+            fontSize:'clamp(100px,28vw,220px)',
             color:NUMBER_COLORS[currentNum],
             textShadow:`0 0 30px ${NUMBER_COLORS[currentNum]}66, 0 0 60px ${NUMBER_COLORS[currentNum]}33`,
             animation:'pulse 2s ease-in-out infinite',
@@ -1385,14 +1385,14 @@ function DrawScreen({ onBack }) {
 
       <div style={{display:'flex',flex:1,overflow:'hidden'}}>
         {/* Color palette sidebar */}
-        <div style={{width:64,display:'flex',flexDirection:'column',alignItems:'center',
-          gap:8,paddingTop:8,paddingBottom:8,overflowY:'auto'}}>
+        <div style={{width:'min(64px, 16vw)',minWidth:44,display:'flex',flexDirection:'column',alignItems:'center',
+          gap:6,paddingTop:6,paddingBottom:6,overflowY:'auto'}}>
           {DRAW_COLORS.map(c => (
             <div key={c.color} role="button"
               onClick={() => { setSelectedColor(c.color); setMixMode(false); }}
               onTouchEnd={(e) => { e.stopPropagation(); setSelectedColor(c.color); setMixMode(false); }}
               style={{
-                width:44,height:44,borderRadius:14,background:c.color,cursor:'pointer',
+                width:'min(44px, 11vw)',height:'min(44px, 11vw)',borderRadius:14,background:c.color,cursor:'pointer',
                 border: !mixMode && selectedColor === c.color ? '3px solid #FFD700' : '3px solid rgba(255,255,255,0.5)',
                 boxShadow: !mixMode && selectedColor === c.color
                   ? `0 0 15px ${c.color}88, 0 0 5px #FFD700`
@@ -1541,9 +1541,9 @@ function CartoonScreen({ onBack }) {
 
       {/* Bottom control bar */}
       <div style={{
-        padding:'10px 12px',
+        padding:'8px 10px',
         background:'linear-gradient(135deg,rgba(255,105,180,0.15),rgba(165,94,234,0.15))',
-        display:'flex',alignItems:'center',gap:8
+        display:'flex',alignItems:'center',gap:6
       }}>
         {/* Big Previous button */}
         <div role="button"
