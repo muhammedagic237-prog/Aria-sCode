@@ -202,7 +202,7 @@ function speakNumber(word) {
 function InjectStyles() {
   useEffect(() => {
     const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap';
+    link.href = 'https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&family=Dancing+Script:wght@700&family=Baloo+2:wght@700;800&display=swap';
     link.rel = 'stylesheet';
     document.head.appendChild(link);
 
@@ -251,6 +251,11 @@ function InjectStyles() {
         0%{transform:scale(0.3);opacity:0.7;filter:blur(8px)}
         40%{transform:scale(2.5);opacity:0.5;filter:blur(18px)}
         100%{transform:scale(4);opacity:0;filter:blur(30px)}
+      }
+      @keyframes megaShockwave {
+        0%{transform:scale(0);opacity:0.6}
+        50%{opacity:0.3}
+        100%{transform:scale(8);opacity:0}
       }
       @keyframes popRing {
         0%{transform:scale(0);opacity:0.8}100%{transform:scale(3);opacity:0}
@@ -435,8 +440,8 @@ function SplashScreen({ onDone }) {
   useEffect(() => {
     const t1 = setTimeout(() => burst(window.innerWidth/2, window.innerHeight/2 - 60, 40,
       ['#FFD700','#FF69B4','#FFB6C1','#AED6F1','#E6CCFF','#FFFFFF']), 300);
-    const t2 = setTimeout(() => setFadeOut(true), 2100);
-    const t3 = setTimeout(onDone, 2500);
+    const t2 = setTimeout(() => setFadeOut(true), 2600);
+    const t3 = setTimeout(onDone, 3000);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [onDone, burst]);
 
@@ -451,20 +456,30 @@ function SplashScreen({ onDone }) {
       <Particles particles={particles} />
       <div style={{zIndex:10,textAlign:'center'}}>
         <div style={{
-          fontFamily:"'Fredoka One',cursive",fontSize:'clamp(48px,12vw,96px)',
+          fontFamily:"'Baloo 2','Fredoka One',cursive",fontSize:'clamp(48px,13vw,100px)',
+          fontWeight:800,
           color:'#FF69B4',
-          textShadow:'0 0 20px rgba(255,105,180,0.6), 0 0 40px rgba(255,182,193,0.4), 0 0 60px rgba(255,215,0,0.3), 2px 2px 0 #E6CCFF',
-          animation:'titleEntrance 1s ease-out forwards, float 3s ease-in-out 1s infinite'
+          textShadow:'0 0 30px rgba(255,182,193,0.8), 0 0 60px rgba(255,182,193,0.5), 0 0 90px rgba(255,105,180,0.3), 3px 3px 0 #E6CCFF, -1px -1px 0 #FFB6C1',
+          animation:'titleEntrance 1s ease-out forwards, float 3s ease-in-out 1s infinite',
+          letterSpacing:'2px',
+          WebkitTextStroke:'1px rgba(255,255,255,0.2)'
         }}>
           Aria's Code
         </div>
         <div style={{
-          fontSize:28, animation:'spin 4s linear infinite', marginTop:8
-        }}>👑</div>
+          fontFamily:"'Dancing Script',cursive",fontSize:'clamp(22px,6vw,34px)',
+          fontWeight:700,
+          color:'#E6CCFF',
+          textShadow:'0 0 15px rgba(230,204,255,0.6), 0 0 30px rgba(255,182,193,0.3), 1px 1px 0 #FFB6C1',
+          marginTop:2,
+          animation:'fadeIn 0.8s ease 0.4s both'
+        }}>
+          👑 Princess Aria 👑
+        </div>
         <div style={{
-          fontFamily:"'Nunito',sans-serif",fontSize:'clamp(16px,4vw,22px)',
-          color:COLORS.skyBlue, fontStyle:'italic', marginTop:12,
-          animation:'fadeIn 0.6s ease 0.6s both'
+          fontFamily:"'Nunito',sans-serif",fontSize:'clamp(14px,3.5vw,20px)',
+          color:COLORS.skyBlue, fontStyle:'italic', marginTop:10,
+          animation:'fadeIn 0.6s ease 0.8s both'
         }}>
           ✨ A Magical World for Aria ✨
         </div>
@@ -477,7 +492,7 @@ function SplashScreen({ onDone }) {
         <div style={{
           height:'100%',borderRadius:12,
           background:'linear-gradient(90deg,#FF69B4,#FFB6C1,#FF69B4)',
-          animation:'loadBar 2500ms linear forwards',position:'relative',overflow:'hidden'
+          animation:'loadBar 3000ms linear forwards',position:'relative',overflow:'hidden'
         }}>
           <div style={{
             position:'absolute',top:0,width:'40%',height:'100%',
@@ -838,10 +853,14 @@ function BubbleScreen({ onBack }) {
   const [scoreBounce, setScoreBounce] = useState(false);
   const [rings, setRings] = useState([]);
   const [fogClouds, setFogClouds] = useState([]);
+  const [megaWave, setMegaWave] = useState(null);
+  const [floatingStars, setFloatingStars] = useState([]);
   const { particles, burst } = useParticles();
   const bubbleId = useRef(0);
   const ringId = useRef(0);
   const fogId = useRef(0);
+  const starId = useRef(0);
+  const popCount = useRef(0);
 
   const pastelColors = ['#FFB6C1','#AED6F1','#E6CCFF','#B2F2BB','#FFF9C4','#FFDAB9'];
   const popColors = ['#FF69B4','#0ABDE3','#5F6AFF','#FFD700','#FF6B6B','#48DBFB','#A55EEA','#00D2D3','#FF9F43','#FECA57','#00D68F','#FF3E7F','#7C5CFC','#00E0FF'];
@@ -881,23 +900,47 @@ function BubbleScreen({ onBack }) {
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
     setBubbles(prev => prev.filter(bb => bb.id !== b.id));
+    popCount.current++;
+    const isMega = popCount.current % 5 === 0;
     playPop();
-    burst(cx, cy, 55, popColors);
-    setTimeout(() => burst(cx, cy, 25, ['#FFD700','#FFFFFF','#FF69B4','#00E0FF','#FECA57','#7C5CFC']), 80);
+    if (isMega) {
+      // MEGA POP — huge burst + stars + pink shockwave
+      burst(cx, cy, 90, [...popColors, '#FFD700','#FFFFFF','#FF69B4']);
+      setTimeout(() => burst(cx, cy, 50, ['#FFD700','#FFFFFF','#FFB6C1','#FF69B4','#E6CCFF']), 100);
+      setTimeout(() => burst(cx, cy, 30, ['#FFD700','#FFFFFF']), 200);
+      // Big baby pink shockwave
+      const waveId = Date.now();
+      setMegaWave({id:waveId, x:cx, y:cy});
+      setTimeout(() => setMegaWave(null), 1200);
+      // Floating stars
+      const newStars = Array.from({length:12}, () => ({
+        id: starId.current++,
+        x: cx + (Math.random()-0.5) * 160,
+        y: cy + (Math.random()-0.5) * 160,
+        size: 20 + Math.random() * 20,
+        delay: Math.random() * 0.3
+      }));
+      setFloatingStars(prev => [...prev, ...newStars]);
+      setTimeout(() => setFloatingStars(prev => prev.filter(s => !newStars.includes(s))), 1500);
+    } else {
+      burst(cx, cy, 55, popColors);
+      setTimeout(() => burst(cx, cy, 25, ['#FFD700','#FFFFFF','#FF69B4','#00E0FF','#FECA57','#7C5CFC']), 80);
+    }
     const rid = ringId.current++;
     setRings(prev => [...prev, {id:rid, x:cx, y:cy}]);
     setTimeout(() => setRings(prev => prev.filter(r => r.id !== rid)), 600);
     // Spawn fog clouds
-    const newFog = Array.from({length:5}, () => ({
+    const fogCount = isMega ? 10 : 5;
+    const newFog = Array.from({length:fogCount}, () => ({
       id: fogId.current++,
-      x: cx + (Math.random()-0.5) * 40,
-      y: cy + (Math.random()-0.5) * 40,
-      size: 40 + Math.random() * 50,
+      x: cx + (Math.random()-0.5) * (isMega ? 80 : 40),
+      y: cy + (Math.random()-0.5) * (isMega ? 80 : 40),
+      size: (isMega ? 60 : 40) + Math.random() * (isMega ? 80 : 50),
       color: fogColors[Math.floor(Math.random() * fogColors.length)],
-      dur: 800 + Math.random() * 500
+      dur: 800 + Math.random() * (isMega ? 800 : 500)
     }));
     setFogClouds(prev => [...prev, ...newFog]);
-    setTimeout(() => setFogClouds(prev => prev.filter(f => !newFog.includes(f))), 1400);
+    setTimeout(() => setFogClouds(prev => prev.filter(f => !newFog.includes(f))), 1800);
     setScore(prev => prev + 1);
     setScoreBounce(true);
     setTimeout(() => setScoreBounce(false), 300);
@@ -908,6 +951,32 @@ function BubbleScreen({ onBack }) {
       <BackButton onClick={onBack} />
       <Particles particles={particles} />
       <PopRings rings={rings} />
+
+      {/* Mega baby pink shockwave */}
+      {megaWave && (
+        <div style={{position:'fixed',inset:0,pointerEvents:'none',zIndex:55}}>
+          <div style={{
+            position:'absolute',
+            left: megaWave.x - 60, top: megaWave.y - 60,
+            width:120, height:120, borderRadius:'50%',
+            border:'6px solid #FFB6C1',
+            background:'radial-gradient(circle, rgba(255,182,193,0.3), transparent 70%)',
+            animation:'megaShockwave 1.2s ease-out forwards'
+          }} />
+        </div>
+      )}
+
+      {/* Floating stars from mega pop */}
+      <div style={{position:'fixed',inset:0,pointerEvents:'none',zIndex:52}}>
+        {floatingStars.map(s => (
+          <div key={s.id} style={{
+            position:'absolute', left:s.x, top:s.y,
+            fontSize:s.size,
+            animation:`noteFloat 1.5s ease-out ${s.delay}s forwards`,
+            opacity:0, animationFillMode:'forwards'
+          }}>⭐</div>
+        ))}
+      </div>
 
       {/* Fog clouds */}
       <div style={{position:'fixed',inset:0,pointerEvents:'none',zIndex:48}}>
