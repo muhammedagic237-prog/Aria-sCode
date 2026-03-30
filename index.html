@@ -976,7 +976,7 @@ function NumbersScreen({ onBack }) {
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
 
-    speakNumber("Number " + NUMBER_WORDS[currentNum]);
+    speakNumber(NUMBER_WORDS[currentNum]);
     playChime();
     burst(cx, cy, 50);
 
@@ -1087,24 +1087,30 @@ function NumbersScreen({ onBack }) {
           display:'flex',flexDirection:'column',alignItems:'center',
           animation: sliding ? 'none' : 'slideLeft 0.4s ease-out'
         }}>
-        {/* Big number */}
-        <div style={{
-          fontFamily:"'Fredoka One',cursive",
-          fontSize:'clamp(140px,40vw,260px)',
-          color:NUMBER_COLORS[currentNum],
-          textShadow:`0 0 30px ${NUMBER_COLORS[currentNum]}66, 0 0 60px ${NUMBER_COLORS[currentNum]}33`,
-          animation:'pulse 2s ease-in-out infinite',
-          lineHeight:1
-        }}>
+        {/* Big number — tappable to hear pronunciation */}
+        <div role="button"
+          onClick={() => speakNumber(NUMBER_WORDS[currentNum])}
+          onTouchEnd={() => speakNumber(NUMBER_WORDS[currentNum])}
+          style={{
+            fontFamily:"'Fredoka One',cursive",
+            fontSize:'clamp(140px,40vw,260px)',
+            color:NUMBER_COLORS[currentNum],
+            textShadow:`0 0 30px ${NUMBER_COLORS[currentNum]}66, 0 0 60px ${NUMBER_COLORS[currentNum]}33`,
+            animation:'pulse 2s ease-in-out infinite',
+            lineHeight:1,cursor:'pointer'
+          }}>
           {currentNum}
         </div>
 
         {/* Word */}
-        <div style={{
-          fontFamily:"'Fredoka One',cursive",fontSize:'clamp(28px,7vw,40px)',
-          color:COLORS.white,textShadow:'0 2px 10px rgba(0,0,0,0.15)',
-          marginTop:-10
-        }}>
+        <div role="button"
+          onClick={() => speakNumber(NUMBER_WORDS[currentNum])}
+          onTouchEnd={() => speakNumber(NUMBER_WORDS[currentNum])}
+          style={{
+            fontFamily:"'Fredoka One',cursive",fontSize:'clamp(28px,7vw,40px)',
+            color:COLORS.white,textShadow:'0 2px 10px rgba(0,0,0,0.15)',
+            marginTop:-10,cursor:'pointer'
+          }}>
           {NUMBER_WORDS[currentNum]}
         </div>
 
