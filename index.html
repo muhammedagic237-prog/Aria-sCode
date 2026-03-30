@@ -35,8 +35,7 @@ const { useState, useEffect, useRef, useCallback } = React;
 /* ─── constants ─── */
 const COLORS = {
   babyPink:'#FFB6C1', hotPink:'#FF69B4', lavender:'#E6CCFF',
-  babyBlue:'#AED6F1', skyBlue:'#87CEEB', white:'#FFFFFF', gold:'#FFD700',
-  mint:'#B2F2BB', peach:'#FFDAB9', yellow:'#FFF9C4'
+  babyBlue:'#AED6F1', skyBlue:'#87CEEB', white:'#FFFFFF', gold:'#FFD700'
 };
 
 const NOTE_FREQS = {
@@ -801,7 +800,7 @@ function PianoScreen({ onBack }) {
           🎹 Piano
         </div>
         <div role="button"
-          onClick={autoPlaySong} onTouchStart={(e) => { e.preventDefault(); autoPlaySong(); }}
+          onClick={autoPlaySong}
           style={{
             background: autoPlaying
               ? 'linear-gradient(135deg,#A55EEA,#5F6AFF)'
@@ -1092,7 +1091,6 @@ function BubbleScreen({ onBack }) {
       {bubbles.map(b => (
         <div key={b.id} role="button"
           onClick={(e) => popBubble(e, b)}
-          onTouchStart={(e) => popBubble(e, b)}
           style={{
             position:'absolute',
             left: b.x + '%',
@@ -1275,7 +1273,6 @@ function NumbersScreen({ onBack }) {
         {/* Tap button */}
         <div role="button"
           onClick={handleTap}
-          onTouchStart={handleTap}
           style={{
             marginTop:30,padding:'18px 50px',borderRadius:30,
             background:'linear-gradient(135deg,#FF69B4,#FFB6C1)',
@@ -1402,7 +1399,7 @@ function DrawScreen({ onBack }) {
           textShadow:'0 0 10px rgba(255,105,180,0.3)'}}>
           🎨 Draw & Color!
         </span>
-        <div role="button" onClick={clearCanvas} onTouchStart={(e) => { e.preventDefault(); clearCanvas(); }}
+        <div role="button" onClick={clearCanvas}
           style={{
             background:'linear-gradient(135deg,#FF6B6B,#FF9F43)',
             padding:'6px 16px',borderRadius:20,cursor:'pointer',
@@ -1779,25 +1776,6 @@ function ShapePoppers({ onBack }) {
     shapesRef.current[idx] = createShape(nextId.current++, w, h);
   }, []);
 
-  const renderShape = (type, color, size) => {
-    const half = size / 2;
-    if (type === 'circle') {
-      return { borderRadius: '50%', width: size, height: size, background: color };
-    }
-    if (type === 'square') {
-      return { borderRadius: 12, width: size, height: size, background: color };
-    }
-    if (type === 'heart') {
-      return {
-        width: size, height: size, position: 'relative', filter: `drop-shadow(0 2px 8px rgba(0,0,0,0.2))`
-      };
-    }
-    // star
-    return {
-      width: size, height: size, position: 'relative', filter: `drop-shadow(0 2px 8px rgba(0,0,0,0.2))`
-    };
-  };
-
   const shapes = shapesRef.current;
   const effects = effectsRef.current;
   const now = Date.now();
@@ -2112,7 +2090,6 @@ function AnimalScreen({ onBack }) {
           return (
             <div key={a.name} role="button"
               onClick={(e) => handleTap(a, idx, e)}
-              onTouchEnd={(e) => { e.preventDefault(); handleTap(a, idx, e); }}
               style={{
                 background: a.bg,
                 borderRadius: 24,
