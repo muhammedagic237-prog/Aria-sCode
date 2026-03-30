@@ -563,7 +563,9 @@ function HomeScreen({ onNavigate }) {
     { key:'draw', emoji:'🎨', label:'Draw & Color!', grad:'linear-gradient(135deg,#B2F2BB,#0ABDE3)',
       shadow:'0 8px 30px rgba(178,242,187,0.4)' },
     { key:'cartoons', emoji:'📺', label:'Watch Cartoons', grad:'linear-gradient(135deg,#A55EEA,#FF69B4)',
-      shadow:'0 8px 30px rgba(165,94,234,0.4)' }
+      shadow:'0 8px 30px rgba(165,94,234,0.4)' },
+    { key:'splatter', emoji:'💥', label:'Splatter Factory!', grad:'linear-gradient(135deg,#FF1493,#00BFFF)',
+      shadow:'0 8px 30px rgba(255,20,147,0.4)' }
   ];
 
   return (
@@ -627,6 +629,11 @@ function HomeScreen({ onNavigate }) {
               <span style={{position:'absolute',top:15,left:25,fontSize:20,animation:'cardFloat1 2s ease-in-out infinite',opacity:0.7}}>⭐</span>
               <span style={{position:'absolute',top:20,right:30,fontSize:18,animation:'cardFloat2 2.5s ease-in-out infinite',opacity:0.7}}>🎬</span>
               <span style={{position:'absolute',bottom:15,left:50,fontSize:16,animation:'cardBounce 2.2s ease-in-out 0.2s infinite',opacity:0.6}}>🍿</span>
+            </>}
+            {c.key === 'splatter' && <>
+              <span style={{position:'absolute',top:12,left:22,fontSize:20,animation:'cardFloat1 1.8s ease-in-out infinite',opacity:0.7}}>🎨</span>
+              <span style={{position:'absolute',top:18,right:28,fontSize:18,animation:'cardFloat2 2.3s ease-in-out infinite',opacity:0.7}}>💦</span>
+              <span style={{position:'absolute',bottom:16,left:48,fontSize:16,animation:'cardBounce 2.1s ease-in-out 0.2s infinite',opacity:0.6}}>🌈</span>
             </>}
             <span style={{fontSize:48,zIndex:2}}>{c.emoji}</span>
             <span style={{fontFamily:"'Fredoka One',cursive",fontSize:24,color:'white',
@@ -1593,6 +1600,196 @@ function CartoonScreen({ onBack }) {
   );
 }
 
+/* ─── SPLATTER FACTORY ─── */
+const SPLATTER_COLORS = ['#FF1493','#00BFFF','#FFD700','#32CD32','#FF7F50','#E6E6FA','#98FF98'];
+
+function playSplatterSound(freq) {
+  const ctx = getAudioContext();
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(freq, t);
+  osc.frequency.linearRampToValueAtTime(freq * 1.2, t + 0.05);
+  osc.frequency.linearRampToValueAtTime(freq * 0.8, t + 0.2);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.linearRampToValueAtTime(0.25, t + 0.02);
+  gain.gain.linearRampToValueAtTime(0, t + 0.2);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + 0.22);
+}
+
+function playDingSound() {
+  const ctx = getAudioContext();
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(1200, t);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.linearRampToValueAtTime(0.3, t + 0.01);
+  gain.gain.linearRampToValueAtTime(0, t + 0.15);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + 0.16);
+}
+
+const SplatterScreen = React.memo(function SplatterScreen({ onBack }) {
+  const [splatters, setSplatters] = useState([]);
+  const [confettiPieces, setConfettiPieces] = useState([]);
+  const tapCount = useRef(0);
+  const splatterId = useRef(0);
+  const confettiIdRef = useRef(0);
+
+  // Cleanup old splatters
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = Date.now();
+      setSplatters(prev => prev.filter(s => now - s.born < 900));
+      setConfettiPieces(prev => prev.filter(c => now - c.born < 1500));
+    }, 500);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleSplat = useCallback((e) => {
+    e.preventDefault();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    tapCount.current++;
+
+    // Play ascending tone with random pitch
+    const freq = 400 + Math.random() * 400;
+    playSplatterSound(freq);
+
+    // Create splatter particles
+    const color = SPLATTER_COLORS[Math.floor(Math.random() * SPLATTER_COLORS.length)];
+    const count = 12 + Math.floor(Math.random() * 4);
+    const now = Date.now();
+    const newParticles = Array.from({length: count}, () => {
+      const angle = Math.random() * Math.PI * 2;
+      const jitter = (Math.random() - 0.5) * 0.35;
+      const speed = 50 + Math.random() * 150;
+      const size = 12 + Math.random() * 24;
+      return {
+        id: splatterId.current++,
+        x: clientX,
+        y: clientY,
+        vx: Math.cos(angle + jitter) * speed,
+        vy: Math.sin(angle + jitter) * speed,
+        size,
+        color: Math.random() > 0.3 ? color : SPLATTER_COLORS[Math.floor(Math.random() * SPLATTER_COLORS.length)],
+        born: now,
+        rotation: Math.random() * 360
+      };
+    });
+    setSplatters(prev => [...prev, ...newParticles]);
+
+    // Every 5th tap — confetti + ding
+    if (tapCount.current % 5 === 0) {
+      playDingSound();
+      const newConfetti = Array.from({length: 20}, () => ({
+        id: confettiIdRef.current++,
+        x: clientX + (Math.random() - 0.5) * 60,
+        y: clientY,
+        color: SPLATTER_COLORS[Math.floor(Math.random() * SPLATTER_COLORS.length)],
+        size: 6 + Math.random() * 8,
+        rotation: Math.random() * 360,
+        drift: (Math.random() - 0.5) * 40,
+        born: now
+      }));
+      setConfettiPieces(prev => [...prev, ...newConfetti]);
+    }
+  }, []);
+
+  return (
+    <div data-game-lock
+      onClick={handleSplat}
+      onTouchStart={handleSplat}
+      style={{
+        position:'fixed',inset:0,zIndex:10,cursor:'pointer',
+        background:'linear-gradient(180deg, #FFE4EC, #E8D8F8, #D4E8FF)',
+        overflow:'hidden',touchAction:'none',
+        padding:20
+      }}>
+      <BackButton onClick={(e) => { e.stopPropagation(); onBack(); }} />
+
+      {/* Splatter particles */}
+      {splatters.map(p => {
+        const age = (Date.now() - p.born) / 800;
+        const clampedAge = Math.min(age, 1);
+        const px = p.x + p.vx * clampedAge;
+        const py = p.y + p.vy * clampedAge;
+        const opacity = 1 - clampedAge;
+        const scale = 1 - clampedAge * 0.3;
+        return (
+          <div key={p.id} style={{
+            position:'absolute',
+            left: px - p.size/2,
+            top: py - p.size/2,
+            width: p.size,
+            height: p.size * (0.85 + Math.random() * 0.001),
+            borderRadius: '50% 45% 55% 40%',
+            background: `radial-gradient(circle at 35% 35%, ${p.color}ee, ${p.color}88)`,
+            opacity,
+            transform: `scale(${scale}) rotate(${p.rotation}deg)`,
+            boxShadow: `0 0 ${p.size/2}px ${p.color}66`,
+            filter: 'blur(1px)',
+            pointerEvents: 'none',
+            willChange: 'transform, opacity'
+          }} />
+        );
+      })}
+
+      {/* Confetti pieces */}
+      {confettiPieces.map(c => {
+        const age = (Date.now() - c.born) / 1400;
+        const clampedAge = Math.min(age, 1);
+        return (
+          <div key={c.id} style={{
+            position:'absolute',
+            left: c.x + c.drift * clampedAge,
+            top: c.y + clampedAge * 250,
+            width: c.size,
+            height: c.size * 1.5,
+            background: c.color,
+            borderRadius: 2,
+            opacity: 1 - clampedAge,
+            transform: `rotate(${c.rotation + clampedAge * 540}deg)`,
+            pointerEvents: 'none',
+            willChange: 'transform, opacity'
+          }} />
+        );
+      })}
+    </div>
+  );
+});
+
+// Animation loop for splatter screen
+function SplatterScreenWrapper({ onBack }) {
+  const [, forceUpdate] = useState(0);
+  const rafRef = useRef(null);
+  const activeRef = useRef(true);
+
+  useEffect(() => {
+    activeRef.current = true;
+    const tick = () => {
+      if (!activeRef.current) return;
+      forceUpdate(n => n + 1);
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      activeRef.current = false;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
+  return <SplatterScreen onBack={onBack} />;
+}
+
 /* ─── MAIN APP ─── */
 function App() {
   const [screen, setScreen] = useState('splash');
@@ -1624,6 +1821,7 @@ function App() {
         {screen === 'numbers' && <NumbersScreen onBack={goHome} />}
         {screen === 'draw' && <DrawScreen onBack={goHome} />}
         {screen === 'cartoons' && <CartoonScreen onBack={goHome} />}
+        {screen === 'splatter' && <SplatterScreenWrapper onBack={goHome} />}
       </div>
     </div>
   );
