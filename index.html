@@ -580,7 +580,9 @@ function HomeScreen({ onNavigate, onBack }) {
     { key:'draw', emoji:'🎨', label:'Draw & Color!', grad:'linear-gradient(135deg,#B2F2BB,#0ABDE3)',
       shadow:'0 8px 30px rgba(178,242,187,0.4)' },
     { key:'shapes', emoji:'⭐', label:'Shape Poppers!', grad:'linear-gradient(135deg,#FFD700,#1E90FF)',
-      shadow:'0 8px 30px rgba(255,215,0,0.4)' }
+      shadow:'0 8px 30px rgba(255,215,0,0.4)' },
+    { key:'garden', emoji:'🌸', label:'Magic Garden!', grad:'linear-gradient(135deg,#7BC67E,#FFD700)',
+      shadow:'0 8px 30px rgba(123,198,126,0.4)' }
   ];
 
   return (
@@ -645,6 +647,11 @@ function HomeScreen({ onNavigate, onBack }) {
               <span style={{position:'absolute',top:14,left:24,fontSize:20,animation:'cardFloat1 2s ease-in-out infinite',opacity:0.7}}>🔵</span>
               <span style={{position:'absolute',top:22,right:26,fontSize:18,animation:'cardFloat2 2.4s ease-in-out infinite',opacity:0.7}}>💖</span>
               <span style={{position:'absolute',bottom:14,left:44,fontSize:16,animation:'cardBounce 1.9s ease-in-out 0.3s infinite',opacity:0.6}}>🟡</span>
+            </>}
+            {c.key === 'garden' && <>
+              <span style={{position:'absolute',top:12,left:22,fontSize:20,animation:'cardFloat1 2.1s ease-in-out infinite',opacity:0.7}}>🦋</span>
+              <span style={{position:'absolute',top:18,right:26,fontSize:18,animation:'cardFloat2 2.5s ease-in-out infinite',opacity:0.7}}>⭐</span>
+              <span style={{position:'absolute',bottom:14,left:46,fontSize:16,animation:'cardBounce 2s ease-in-out 0.2s infinite',opacity:0.6}}>🍄</span>
             </>}
             <span style={{fontSize:48,zIndex:2}}>{c.emoji}</span>
             <span style={{fontFamily:"'Fredoka One',cursive",fontSize:24,color:'white',
@@ -2111,6 +2118,308 @@ function CartoonBrowser({ onSelect, onBack }) {
   );
 }
 
+/* ─── MAGIC TOUCH GARDEN ─── */
+const GARDEN_OBJECTS = [
+  {type:'star',emoji:'⭐',color:'#FFD700',label:'Star'},
+  {type:'flower',emoji:'🌸',color:'#FF69B4',label:'Flower'},
+  {type:'butterfly',emoji:'🦋',color:'#00BFFF',label:'Butterfly'},
+  {type:'mushroom',emoji:'🍄',color:'#FF3333',label:'Mushroom'},
+  {type:'rainbow',emoji:'🌈',color:'#A855F7',label:'Rainbow'},
+  {type:'crystal',emoji:'💎',color:'#00FFFF',label:'Crystal'}
+];
+const GARDEN_PARTICLE_COLORS = ['#FF6B6B','#FFE66D','#4ECDC4','#A8E6CF','#FF8B94','#FFA3D7','#B8F0FF'];
+const REWARD_EMOJIS = ['🌟','🎉','💥','✨','🎊','🦄','🍭','🎈'];
+
+function playGardenSound(type) {
+  const ctx = getAudioContext();
+  const t = ctx.currentTime;
+  if (type === 'star') {
+    const o = ctx.createOscillator(); o.type='sine';
+    o.frequency.setValueAtTime(880,t); o.frequency.linearRampToValueAtTime(1320,t+0.2);
+    const g = ctx.createGain(); g.gain.setValueAtTime(0.3,t); g.gain.linearRampToValueAtTime(0,t+0.3);
+    o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t+0.32);
+  } else if (type === 'flower') {
+    [523,659,784].forEach((f,i) => {
+      const o = ctx.createOscillator(); o.type='sine'; o.frequency.value=f;
+      const g = ctx.createGain(); g.gain.setValueAtTime(0.2,t+i*0.08); g.gain.linearRampToValueAtTime(0,t+i*0.08+0.4);
+      o.connect(g); g.connect(ctx.destination); o.start(t+i*0.08); o.stop(t+i*0.08+0.42);
+    });
+  } else if (type === 'butterfly') {
+    const o = ctx.createOscillator(); o.type='sine'; o.frequency.value=750;
+    const lfo = ctx.createOscillator(); lfo.type='sine'; lfo.frequency.value=20;
+    const lg = ctx.createGain(); lg.gain.value=150;
+    lfo.connect(lg); lg.connect(o.frequency);
+    const g = ctx.createGain(); g.gain.setValueAtTime(0.2,t); g.gain.linearRampToValueAtTime(0,t+0.3);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t); o.stop(t+0.32); lfo.start(t); lfo.stop(t+0.32);
+  } else if (type === 'mushroom') {
+    const o = ctx.createOscillator(); o.type='sine';
+    o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(80,t+0.4);
+    const g = ctx.createGain(); g.gain.setValueAtTime(0.35,t); g.gain.linearRampToValueAtTime(0,t+0.5);
+    o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t+0.52);
+  } else if (type === 'rainbow') {
+    const o = ctx.createOscillator(); o.type='triangle';
+    o.frequency.setValueAtTime(300,t); o.frequency.linearRampToValueAtTime(1200,t+0.6);
+    const g = ctx.createGain(); g.gain.setValueAtTime(0.2,t);
+    g.gain.setValueAtTime(0.15,t+0.4); g.gain.linearRampToValueAtTime(0,t+0.6);
+    o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t+0.62);
+  } else if (type === 'crystal') {
+    const o = ctx.createOscillator(); o.type='sine'; o.frequency.value=1046;
+    const g = ctx.createGain(); g.gain.setValueAtTime(0.3,t); g.gain.exponentialRampToValueAtTime(0.01,t+1);
+    o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t+1.05);
+  }
+}
+
+function spawnGardenObj(id, existing) {
+  const obj = GARDEN_OBJECTS[Math.floor(Math.random()*GARDEN_OBJECTS.length)];
+  let x, y, tries = 0;
+  do {
+    x = 10 + Math.random() * 80;
+    y = 15 + Math.random() * 55;
+    tries++;
+  } while (tries < 10 && existing.some(e => Math.abs(e.x-x)<15 && Math.abs(e.y-y)<15));
+  return {
+    id, ...obj,
+    x, y,
+    phase: Math.random() * Math.PI * 2,
+    speed: 3 + Math.random() * 3,
+    born: Date.now()
+  };
+}
+
+function GardenScreen({ onBack }) {
+  const [objects, setObjects] = useState([]);
+  const [effects, setEffects] = useState([]);
+  const [flash, setFlash] = useState(null);
+  const [score, setScore] = useState(0);
+  const [scorePop, setScorePop] = useState(false);
+  const effectId = useRef(0);
+  const objId = useRef(0);
+
+  const [tick, setTick] = useState(0);
+
+  // Init objects + animation loop
+  useEffect(() => {
+    const init = [];
+    for (let i = 0; i < 7; i++) init.push(spawnGardenObj(objId.current++, init));
+    setObjects(init);
+    let raf;
+    const loop = () => { setTick(n => n+1); raf = requestAnimationFrame(loop); };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // Cleanup effects
+  useEffect(() => {
+    const t = setInterval(() => {
+      setEffects(prev => prev.filter(e => Date.now() - e.born < e.dur));
+    }, 400);
+    return () => clearInterval(t);
+  }, []);
+
+  const handleTap = useCallback((obj, idx) => {
+    getAudioContext();
+    playGardenSound(obj.type);
+
+    // Flash
+    setFlash(obj.color);
+    setTimeout(() => setFlash(null), 300);
+
+    // Score
+    setScore(prev => prev + 1);
+    setScorePop(true);
+    setTimeout(() => setScorePop(false), 300);
+
+    const cx = obj.x;
+    const cy = obj.y;
+    const now = Date.now();
+    const newFx = [];
+
+    // 22 particles
+    for (let i = 0; i < 22; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 60 + Math.random() * 120;
+      newFx.push({
+        id: effectId.current++, type:'particle',
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+        color: GARDEN_PARTICLE_COLORS[Math.floor(Math.random()*GARDEN_PARTICLE_COLORS.length)],
+        size: 8 + Math.random() * 12,
+        born: now, dur: 700
+      });
+    }
+
+    // Reward emoji
+    newFx.push({
+      id: effectId.current++, type:'reward',
+      x: cx, y: cy,
+      emoji: REWARD_EMOJIS[Math.floor(Math.random()*REWARD_EMOJIS.length)],
+      born: now, dur: 1000
+    });
+
+    // Shockwave ring
+    newFx.push({
+      id: effectId.current++, type:'ring',
+      x: cx, y: cy, color: obj.color,
+      born: now, dur: 400
+    });
+
+    setEffects(prev => [...prev, ...newFx]);
+
+    // Respawn object after delay
+    setObjects(prev => {
+      const next = [...prev];
+      setTimeout(() => {
+        setObjects(p => {
+          const n = [...p];
+          const i = n.findIndex(o => o.id === obj.id);
+          if (i !== -1) n[i] = spawnGardenObj(objId.current++, n);
+          return n;
+        });
+      }, 600);
+      // Mark as tapped
+      next[idx] = {...next[idx], tapped: true};
+      return next;
+    });
+  }, []);
+
+  const now = Date.now();
+
+  return (
+    <div data-game-lock style={{position:'fixed',inset:0,zIndex:10,overflow:'hidden',
+      touchAction:'none',overscrollBehavior:'none'}}>
+
+      {/* Animated sky */}
+      <div style={{
+        position:'absolute',inset:0,
+        background:'linear-gradient(180deg, #87CEEB, #AED6F1, #7BC67E)',
+        backgroundSize:'100% 100%'
+      }} />
+
+      {/* Hills */}
+      <div style={{position:'absolute',bottom:0,left:'-10%',width:'120%',height:'30%',
+        borderRadius:'50% 50% 0 0',background:'#7BC67E',zIndex:2}} />
+      <div style={{position:'absolute',bottom:0,left:'20%',width:'100%',height:'25%',
+        borderRadius:'50% 50% 0 0',background:'#5AAF5E',zIndex:3}} />
+      <div style={{position:'absolute',bottom:0,left:'-20%',width:'100%',height:'20%',
+        borderRadius:'50% 50% 0 0',background:'#3D9142',zIndex:4}} />
+
+      {/* Clouds */}
+      <div style={{position:'absolute',top:'8%',width:100,height:40,borderRadius:40,
+        background:'rgba(255,255,255,0.7)',zIndex:1,
+        animation:'shimmerDrift 20s linear infinite'}} />
+      <div style={{position:'absolute',top:'15%',width:70,height:30,borderRadius:30,
+        background:'rgba(255,255,255,0.5)',zIndex:1,
+        animation:'shimmerDrift 28s linear 5s infinite'}} />
+
+      {/* Twinkling stars in sky */}
+      {[...Array(6)].map((_,i) => (
+        <div key={'ts'+i} style={{
+          position:'absolute',
+          left:(10+i*15)+'%', top:(5+i*4)+'%',
+          fontSize:14, opacity:0.5,
+          animation:`sparkle ${1.5+i*0.3}s ease-in-out ${i*0.4}s infinite`,
+          zIndex:1
+        }}>✦</div>
+      ))}
+
+      <BackButton onClick={onBack} />
+
+      {/* Score */}
+      <div style={{
+        position:'absolute',top:16,right:16,zIndex:40,
+        fontFamily:"'Fredoka One',cursive",fontSize:32,color:'#FFD700',
+        textShadow:'0 2px 8px rgba(0,0,0,0.2)',
+        transform: scorePop ? 'scale(1.4)' : 'scale(1)',
+        transition:'transform 0.15s'
+      }}>
+        ⭐ {score}
+      </div>
+
+      {/* Flash overlay */}
+      {flash && (
+        <div style={{
+          position:'absolute',inset:0,zIndex:45,pointerEvents:'none',
+          background:flash, opacity:0.15,
+          animation:'fadeIn 0.05s ease both'
+        }} />
+      )}
+
+      {/* Garden objects */}
+      {objects.map((obj, idx) => {
+        if (obj.tapped) return null;
+        const drift = Math.sin((now/1000) / obj.speed + obj.phase) * 12;
+        const driftY = Math.cos((now/1000) / (obj.speed*0.8) + obj.phase) * 8;
+        return (
+          <div key={obj.id} role="button"
+            onClick={() => handleTap(obj, idx)}
+            style={{
+              position:'absolute',
+              left: `calc(${obj.x}% + ${drift}px)`,
+              top: `calc(${obj.y}% + ${driftY}px)`,
+              fontSize:'clamp(50px,14vw,70px)',
+              zIndex:20,cursor:'pointer',
+              filter:`drop-shadow(0 0 10px ${obj.color}66)`,
+              animation: obj.type==='flower' ? 'float 2s ease-in-out infinite'
+                : obj.type==='mushroom' ? 'float 1.5s ease-in-out infinite'
+                : obj.type==='star' ? 'spin 4s linear infinite'
+                : obj.type==='crystal' ? 'spin 6s linear infinite'
+                : 'float 3s ease-in-out infinite',
+              transition:'transform 0.1s',
+              padding:10,margin:-10
+            }}
+          >{obj.emoji}</div>
+        );
+      })}
+
+      {/* Effects */}
+      <div style={{position:'fixed',inset:0,pointerEvents:'none',zIndex:50}}>
+        {effects.map(e => {
+          const age = (now - e.born) / e.dur;
+          const ca = Math.min(age, 1);
+          if (e.type === 'particle') {
+            return (
+              <div key={e.id} style={{
+                position:'absolute',
+                left: (e.x)+'%', top: (e.y)+'%',
+                marginLeft: e.vx * ca, marginTop: e.vy * ca + ca*ca*80,
+                width: e.size*(1-ca*0.7), height: e.size*(1-ca*0.7),
+                borderRadius: '50%', background: e.color,
+                opacity: 1 - ca
+              }} />
+            );
+          }
+          if (e.type === 'reward') {
+            return (
+              <div key={e.id} style={{
+                position:'absolute',
+                left: e.x+'%', top: e.y+'%',
+                marginTop: -ca * 80,
+                fontSize: 50, opacity: 1 - ca,
+                transform: `scale(${ca < 0.15 ? ca/0.15*2 : 1.5-ca*0.5})`
+              }}>{e.emoji}</div>
+            );
+          }
+          if (e.type === 'ring') {
+            return (
+              <div key={e.id} style={{
+                position:'absolute',
+                left: e.x+'%', top: e.y+'%',
+                marginLeft:-25, marginTop:-25,
+                width:50, height:50, borderRadius:'50%',
+                border:`3px solid ${e.color}`,
+                transform: `scale(${1+ca*3})`,
+                opacity: 1 - ca
+              }} />
+            );
+          }
+          return null;
+        })}
+      </div>
+    </div>
+  );
+}
+
 /* ─── MAIN APP ─── */
 function App() {
   const [screen, setScreen] = useState('splash');
@@ -2152,6 +2461,7 @@ function App() {
         {screen === 'cartoons' && <CartoonScreen onBack={() => setScreen('cartoon-browser')} startIdx={cartoonIdx} />}
         {screen === 'shapes' && <ShapePoppers onBack={goHome} />}
         {screen === 'mamino' && <MaminoScreen onBack={goHome} />}
+        {screen === 'garden' && <GardenScreen onBack={goHome} />}
       </div>
     </div>
   );
