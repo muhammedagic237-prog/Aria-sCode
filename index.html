@@ -1366,7 +1366,7 @@ function NumbersScreen({ onBack }) {
     if (currentNum >= 20) {
       setTimeout(() => {
         setCompleted(true);
-        speakNumber("Amazing! You know all your numbers!");
+        speakNumber("Great! Aria knows her numbers!");
         // confetti rain
         const newConfetti = Array.from({length:100}, () => ({
           id: confettiId.current++,
@@ -1415,7 +1415,7 @@ function NumbersScreen({ onBack }) {
           fontFamily:"'Fredoka One',cursive",fontSize:'clamp(32px,8vw,48px)',
           color:'#FF69B4',textShadow:'0 0 20px rgba(255,105,180,0.5)',
           marginTop:20,zIndex:10
-        }}>You Did It! 🎉</div>
+        }}>Great! Aria Knows Her Numbers! 🎉</div>
         <div role="button"
           onClick={resetGame} onTouchStart={() => {}}
           style={{
