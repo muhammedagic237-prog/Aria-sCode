@@ -539,8 +539,8 @@ function PhotoSplash({ onDone }) {
   const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setFadeOut(true), 1400);
-    const t2 = setTimeout(onDone, 1800);
+    const t1 = setTimeout(() => setFadeOut(true), 1900);
+    const t2 = setTimeout(onDone, 2300);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [onDone]);
 
@@ -571,6 +571,63 @@ function PhotoSplash({ onDone }) {
       }}>
         👑 Princess Aria 👑
       </div>
+
+      {/* 3 cute pink flowers rising from bottom */}
+      {[
+        {left:'12%',delay:0.3,rot:-15,size:70},
+        {left:'50%',delay:0.6,rot:8,size:80},
+        {left:'82%',delay:0.9,rot:-5,size:65}
+      ].map((f,i) => (
+        <div key={i} style={{
+          position:'absolute',bottom:0,left:f.left,
+          transform:`translateX(-50%) rotate(${f.rot}deg)`,
+          zIndex:8,
+          animation:`fadeIn 0.8s ease ${f.delay}s both`
+        }}>
+          {/* Stem */}
+          <div style={{
+            width:6,height:f.size*1.2,
+            background:'linear-gradient(180deg, #5AAF5E, #3D9142)',
+            borderRadius:3,margin:'0 auto',
+            position:'relative'
+          }}>
+            {/* Leaf */}
+            <div style={{
+              position:'absolute',top:'40%',left:i%2===0?-12:6,
+              width:16,height:10,
+              background:'linear-gradient(135deg, #7BC67E, #5AAF5E)',
+              borderRadius:i%2===0?'50% 0 50% 50%':'0 50% 50% 50%',
+              transform:`rotate(${i%2===0?-20:20}deg)`
+            }} />
+          </div>
+          {/* Flower head */}
+          <div style={{
+            position:'absolute',top:-f.size*0.35,left:'50%',transform:'translateX(-50%)',
+            width:f.size*0.7,height:f.size*0.7,
+            display:'flex',alignItems:'center',justifyContent:'center'
+          }}>
+            {/* Petals */}
+            {[0,72,144,216,288].map((angle,pi) => (
+              <div key={pi} style={{
+                position:'absolute',
+                width:f.size*0.28,height:f.size*0.38,
+                background:`radial-gradient(ellipse at 50% 70%, #FF69B4, #FF1493 60%, #C71585)`,
+                borderRadius:'50% 50% 50% 50% / 60% 60% 40% 40%',
+                transformOrigin:'bottom center',
+                transform:`rotate(${angle}deg) translateY(-${f.size*0.12}px)`,
+                boxShadow:'inset 0 -2px 4px rgba(255,255,255,0.3), inset 0 2px 3px rgba(0,0,0,0.1)'
+              }} />
+            ))}
+            {/* Center */}
+            <div style={{
+              width:f.size*0.18,height:f.size*0.18,borderRadius:'50%',
+              background:'radial-gradient(circle, #FFD700, #FFA000)',
+              boxShadow:'0 0 6px rgba(255,215,0,0.5)',
+              zIndex:2
+            }} />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
