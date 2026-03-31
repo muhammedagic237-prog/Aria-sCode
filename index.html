@@ -95,26 +95,35 @@ function playNote(freq, duration = 0.5, type = 'triangle') {
 function playPop() {
   const ctx = getAudioContext();
   const t = ctx.currentTime;
-  // Gentle ascending chime — two soft tones
+  // Soft bass thump — bubbly "poof"
+  const bass = ctx.createOscillator(); bass.type = 'sine';
+  bass.frequency.setValueAtTime(250, t);
+  bass.frequency.exponentialRampToValueAtTime(100, t + 0.15);
+  const bg = ctx.createGain();
+  bg.gain.setValueAtTime(0.2, t);
+  bg.gain.linearRampToValueAtTime(0, t + 0.18);
+  bass.connect(bg); bg.connect(ctx.destination);
+  bass.start(t); bass.stop(t + 0.2);
+  // Cheerful ascending chime
   const freq = 500 + Math.random() * 200;
   const o1 = ctx.createOscillator(); o1.type = 'sine';
-  o1.frequency.setValueAtTime(freq, t);
-  o1.frequency.linearRampToValueAtTime(freq * 1.3, t + 0.12);
+  o1.frequency.setValueAtTime(freq, t + 0.02);
+  o1.frequency.linearRampToValueAtTime(freq * 1.4, t + 0.15);
   const g1 = ctx.createGain();
-  g1.gain.setValueAtTime(0, t);
-  g1.gain.linearRampToValueAtTime(0.18, t + 0.02);
-  g1.gain.linearRampToValueAtTime(0, t + 0.2);
+  g1.gain.setValueAtTime(0, t + 0.02);
+  g1.gain.linearRampToValueAtTime(0.22, t + 0.04);
+  g1.gain.linearRampToValueAtTime(0, t + 0.25);
   o1.connect(g1); g1.connect(ctx.destination);
-  o1.start(t); o1.stop(t + 0.22);
-  // Soft sparkle overtone
+  o1.start(t + 0.02); o1.stop(t + 0.27);
+  // Sparkle overtone
   const o2 = ctx.createOscillator(); o2.type = 'sine';
-  o2.frequency.setValueAtTime(freq * 2, t + 0.03);
+  o2.frequency.setValueAtTime(freq * 2.5, t + 0.04);
   const g2 = ctx.createGain();
-  g2.gain.setValueAtTime(0, t + 0.03);
-  g2.gain.linearRampToValueAtTime(0.08, t + 0.05);
-  g2.gain.linearRampToValueAtTime(0, t + 0.18);
+  g2.gain.setValueAtTime(0, t + 0.04);
+  g2.gain.linearRampToValueAtTime(0.1, t + 0.06);
+  g2.gain.linearRampToValueAtTime(0, t + 0.22);
   o2.connect(g2); g2.connect(ctx.destination);
-  o2.start(t + 0.03); o2.stop(t + 0.2);
+  o2.start(t + 0.04); o2.stop(t + 0.24);
 }
 
 function playChime() {
@@ -1065,33 +1074,54 @@ function BubbleScreen({ onBack }) {
     popCount.current++;
     const isMega = popCount.current % 5 === 0;
     if (isMega) {
-      // MEGA chime — happy ascending arpeggio
+      // MEGA baby explosion sound — triple chime + bass boom
+      playPop();
       playChime();
-      setTimeout(() => playChime(), 150);
-      // MEGA POP — massive rainbow burst
-      const megaColors = ['#FF69B4','#FFD700','#00BFFF','#FF6B6B','#A55EEA','#48DBFB','#FECA57','#00D68F','#FF9F43','#FFFFFF','#E6CCFF','#32CD32','#FF7F50','#00E0FF'];
-      burst(cx, cy, 80, megaColors, {speed:2, size:1.5});
-      setTimeout(() => burst(cx, cy, 50, megaColors, {speed:1.4, size:1.2}), 80);
-      setTimeout(() => burst(cx, cy, 20, ['#FFD700','#FFFFFF'], {speed:0.5, size:0.9, type:'ember', durMul:1.8, upBias:50}), 160);
+      setTimeout(() => playChime(), 120);
+      setTimeout(() => playPop(), 200);
+      // FULL SCREEN pinkish color explosion — a million colors, all pinkish
+      const pinkRainbow = [
+        '#FF69B4','#FFB6C1','#FFC0CB','#FF1493','#FF85A2',
+        '#FFD700','#FECA57','#FF9F43','#E6CCFF','#A55EEA',
+        '#FF6B6B','#FF7F50','#FFFFFF','#FFB0BE','#FF3E7F',
+        '#FFA3D7','#FF85C0','#FFADB5','#48DBFB','#00E0FF'
+      ];
+      // Center explosion
+      burst(cx, cy, 80, pinkRainbow, {speed:2.5, size:1.6});
+      // Delayed waves spreading further
+      setTimeout(() => burst(cx, cy, 60, pinkRainbow, {speed:2, size:1.3}), 70);
+      setTimeout(() => burst(cx, cy, 40, pinkRainbow, {speed:1.5, size:1}), 140);
+      // Screen-wide bursts from edges
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      setTimeout(() => {
+        burst(w*0.2, h*0.3, 25, pinkRainbow, {speed:1.8, size:1.2});
+        burst(w*0.8, h*0.4, 25, pinkRainbow, {speed:1.8, size:1.2});
+        burst(w*0.5, h*0.15, 20, pinkRainbow, {speed:1.5, size:1});
+        burst(w*0.3, h*0.7, 20, pinkRainbow, {speed:1.5, size:1});
+        burst(w*0.7, h*0.7, 20, pinkRainbow, {speed:1.5, size:1});
+      }, 200);
+      // Floating embers everywhere
+      setTimeout(() => burst(cx, cy, 30, ['#FFB6C1','#FFD700','#FFFFFF','#FF69B4'], {speed:0.6, size:1, type:'ember', durMul:2, upBias:40}), 300);
       // Big baby pink shockwave
       const waveId = Date.now();
       setMegaWave({id:waveId, x:cx, y:cy});
       setTimeout(() => setMegaWave(null), 1200);
-      // Lots of floating stars
-      const newStars = Array.from({length:20}, () => ({
+      // Stars everywhere
+      const newStars = Array.from({length:25}, () => ({
         id: starId.current++,
-        x: cx + (Math.random()-0.5) * 160,
-        y: cy + (Math.random()-0.5) * 160,
-        size: 20 + Math.random() * 20,
-        delay: Math.random() * 0.3
+        x: Math.random() * w,
+        y: Math.random() * h,
+        size: 18 + Math.random() * 24,
+        delay: Math.random() * 0.4
       }));
       setFloatingStars(prev => [...prev, ...newStars]);
-      setTimeout(() => setFloatingStars(prev => prev.filter(s => !newStars.includes(s))), 1500);
+      setTimeout(() => setFloatingStars(prev => prev.filter(s => !newStars.includes(s))), 1800);
     } else {
       playPop();
-      // 50 colorful particles — all different colors, clean and fast
-      const rainbow = ['#FF69B4','#FFD700','#00BFFF','#FF6B6B','#A55EEA','#48DBFB','#FECA57','#00D68F','#FF9F43','#32CD32','#FF7F50','#E6CCFF','#FFFFFF','#00E0FF'];
-      burst(cx, cy, 50, rainbow, {speed:1.6, size:1});
+      // 50 particles in pinkish rainbow colors
+      const pinkMix = ['#FF69B4','#FFB6C1','#FFC0CB','#FFD700','#FF6B6B','#E6CCFF','#A55EEA','#FFFFFF','#FF9F43','#FECA57','#48DBFB','#FFB0BE','#FF85A2','#FFA3D7'];
+      burst(cx, cy, 50, pinkMix, {speed:1.6, size:1});
     }
     const rid = ringId.current++;
     setRings(prev => [...prev, {id:rid, x:cx, y:cy}]);
