@@ -591,7 +591,9 @@ function HomeScreen({ onNavigate, onBack }) {
     { key:'shapes', emoji:'⭐', label:'Shape Poppers!', grad:'linear-gradient(135deg,#FFD700,#1E90FF)',
       shadow:'0 8px 30px rgba(255,215,0,0.4)' },
     { key:'garden', emoji:'🌸', label:'Magic Garden!', grad:'linear-gradient(135deg,#7BC67E,#FFD700)',
-      shadow:'0 8px 30px rgba(123,198,126,0.4)' }
+      shadow:'0 8px 30px rgba(123,198,126,0.4)' },
+    { key:'galaxy', emoji:'🪐', label:'Color Galaxy!', grad:'linear-gradient(135deg,#0A1428,#8B5CF6)',
+      shadow:'0 8px 30px rgba(139,92,246,0.4)' }
   ];
 
   return (
@@ -661,6 +663,11 @@ function HomeScreen({ onNavigate, onBack }) {
               <span style={{position:'absolute',top:12,left:22,fontSize:20,animation:'cardFloat1 2.1s ease-in-out infinite',opacity:0.7}}>🦋</span>
               <span style={{position:'absolute',top:18,right:26,fontSize:18,animation:'cardFloat2 2.5s ease-in-out infinite',opacity:0.7}}>⭐</span>
               <span style={{position:'absolute',bottom:14,left:46,fontSize:16,animation:'cardBounce 2s ease-in-out 0.2s infinite',opacity:0.6}}>🍄</span>
+            </>}
+            {c.key === 'galaxy' && <>
+              <span style={{position:'absolute',top:14,left:24,fontSize:18,animation:'sparkle 2s ease-in-out infinite',opacity:0.8}}>✨</span>
+              <span style={{position:'absolute',top:20,right:28,fontSize:16,animation:'sparkle 2.5s ease-in-out 0.5s infinite',opacity:0.7}}>💫</span>
+              <span style={{position:'absolute',bottom:16,left:44,fontSize:14,animation:'sparkle 1.8s ease-in-out 1s infinite',opacity:0.6}}>⭐</span>
             </>}
             <span style={{fontSize:48,zIndex:2}}>{c.emoji}</span>
             <span style={{fontFamily:"'Fredoka One',cursive",fontSize:24,color:'white',
@@ -2487,6 +2494,242 @@ function GardenScreen({ onBack }) {
   );
 }
 
+/* ─── COLOR BURST GALAXY ─── */
+const PLANETS = [
+  {type:'ruby',color:'#DC2626',glow:'#DC262666'},
+  {type:'sapphire',color:'#0EA5E9',glow:'#0EA5E966'},
+  {type:'emerald',color:'#10B981',glow:'#10B98166'},
+  {type:'amethyst',color:'#A855F7',glow:'#A855F766'},
+  {type:'golden',color:'#FBBF24',glow:'#FBBF2466'},
+  {type:'coral',color:'#F43F5E',glow:'#F43F5E66'}
+];
+const GALAXY_EMOJIS = ['💥','✨','🌟','🎆','⭐','💫','🌠','🎇'];
+
+function playPlanetSound(type) {
+  const ctx = getAudioContext();
+  const t = ctx.currentTime;
+  if (type==='ruby') {
+    const o=ctx.createOscillator();o.type='sine';o.frequency.setValueAtTime(220,t);o.frequency.linearRampToValueAtTime(440,t+0.3);
+    const o2=ctx.createOscillator();o2.type='sine';o2.frequency.value=110;
+    const g=ctx.createGain();g.gain.setValueAtTime(0.35,t);g.gain.linearRampToValueAtTime(0,t+0.5);
+    const g2=ctx.createGain();g2.gain.setValueAtTime(0.15,t);g2.gain.linearRampToValueAtTime(0,t+0.4);
+    o.connect(g);g.connect(ctx.destination);o2.connect(g2);g2.connect(ctx.destination);
+    o.start(t);o.stop(t+0.52);o2.start(t);o2.stop(t+0.42);
+  } else if (type==='sapphire') {
+    const o=ctx.createOscillator();o.type='sine';o.frequency.setValueAtTime(1200,t);o.frequency.linearRampToValueAtTime(2400,t+0.2);
+    const g=ctx.createGain();g.gain.setValueAtTime(0.25,t);g.gain.linearRampToValueAtTime(0,t+0.5);
+    o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+0.52);
+  } else if (type==='emerald') {
+    [523,743].forEach((f,i)=>{
+      const o=ctx.createOscillator();o.type='sine';o.frequency.value=f;
+      const g=ctx.createGain();g.gain.setValueAtTime(i===0?0.3:0.15,t);g.gain.linearRampToValueAtTime(0,t+0.6);
+      o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+0.62);
+    });
+  } else if (type==='amethyst') {
+    const o=ctx.createOscillator();o.type='triangle';o.frequency.setValueAtTime(800,t);o.frequency.linearRampToValueAtTime(1600,t+0.4);
+    const lfo=ctx.createOscillator();lfo.type='sine';lfo.frequency.value=6;
+    const lg=ctx.createGain();lg.gain.value=50;lfo.connect(lg);lg.connect(o.frequency);
+    const g=ctx.createGain();g.gain.setValueAtTime(0.25,t);g.gain.linearRampToValueAtTime(0,t+0.7);
+    o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+0.72);lfo.start(t);lfo.stop(t+0.72);
+  } else if (type==='golden') {
+    const o=ctx.createOscillator();o.type='sine';o.frequency.value=784;
+    const g=ctx.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.35,t+0.05);
+    g.gain.setValueAtTime(0.25,t+0.2);g.gain.linearRampToValueAtTime(0,t+1);
+    o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+1.02);
+  } else if (type==='coral') {
+    const o=ctx.createOscillator();o.type='sine';o.frequency.setValueAtTime(659,t);o.frequency.linearRampToValueAtTime(440,t+0.4);
+    const o2=ctx.createOscillator();o2.type='sine';o2.frequency.setValueAtTime(880,t);o2.frequency.linearRampToValueAtTime(660,t+0.4);
+    const g=ctx.createGain();g.gain.setValueAtTime(0.3,t);g.gain.linearRampToValueAtTime(0,t+0.5);
+    const g2=ctx.createGain();g2.gain.setValueAtTime(0.15,t);g2.gain.linearRampToValueAtTime(0,t+0.5);
+    o.connect(g);g.connect(ctx.destination);o2.connect(g2);g2.connect(ctx.destination);
+    o.start(t);o.stop(t+0.52);o2.start(t);o2.stop(t+0.52);
+  }
+}
+
+function spawnPlanet(id, existing) {
+  const p = PLANETS[Math.floor(Math.random()*PLANETS.length)];
+  let x,y,tries=0;
+  const size = 80 + Math.random()*80;
+  do { x=12+Math.random()*76; y=20+Math.random()*55; tries++; }
+  while(tries<10 && existing.some(e=>Math.abs(e.x-x)<18&&Math.abs(e.y-y)<18));
+  return {id,...p,x,y,size,phase:Math.random()*Math.PI*2,speed:3+Math.random()*3,tapped:false};
+}
+
+function GalaxyScreen({ onBack }) {
+  const [planets, setPlanets] = useState([]);
+  const [effects, setEffects] = useState([]);
+  const [flash, setFlash] = useState(null);
+  const [score, setScore] = useState(0);
+  const [scorePop, setScorePop] = useState(false);
+  const [tick, setTick] = useState(0);
+  const effectId = useRef(0);
+  const planetId = useRef(0);
+
+  useEffect(() => {
+    const init=[];for(let i=0;i<6;i++)init.push(spawnPlanet(planetId.current++,init));
+    setPlanets(init);
+    let raf;
+    const loop=()=>{setTick(n=>n+1);raf=requestAnimationFrame(loop);};
+    raf=requestAnimationFrame(loop);
+    return ()=>cancelAnimationFrame(raf);
+  },[]);
+
+  useEffect(() => {
+    const t=setInterval(()=>setEffects(prev=>prev.filter(e=>Date.now()-e.born<e.dur)),500);
+    return ()=>clearInterval(t);
+  },[]);
+
+  const handleTap = useCallback((planet,idx)=>{
+    if(planet.tapped)return;
+    getAudioContext();
+    playPlanetSound(planet.type);
+    setScore(prev=>prev+1);
+    setScorePop(true);
+    setTimeout(()=>setScorePop(false),300);
+    setFlash(planet.color);
+    setTimeout(()=>setFlash(null),350);
+
+    const now=Date.now();
+    const newFx=[];
+    // Light rays
+    for(let i=0;i<16;i++){
+      const angle=(Math.PI*2*i)/16;
+      newFx.push({id:effectId.current++,type:'ray',x:planet.x,y:planet.y,
+        angle:angle*180/Math.PI,color:planet.color,born:now,dur:500});
+    }
+    // 35 particles
+    for(let i=0;i<35;i++){
+      const angle=Math.random()*Math.PI*2;
+      const speed=60+Math.random()*140;
+      newFx.push({id:effectId.current++,type:'particle',x:planet.x,y:planet.y,
+        vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,
+        color:['#FF6B6B','#FFE66D','#4ECDC4','#A8E6CF','#FF8B94','#FFA3D7','#B8F0FF','#FFB6C1'][Math.floor(Math.random()*8)],
+        size:6+Math.random()*14,born:now,dur:800});
+    }
+    // Shockwave rings
+    newFx.push({id:effectId.current++,type:'ring',x:planet.x,y:planet.y,color:planet.color,born:now,dur:400});
+    newFx.push({id:effectId.current++,type:'ring',x:planet.x,y:planet.y,color:'#FFFFFF',born:now+100,dur:400});
+    // Reward emoji
+    newFx.push({id:effectId.current++,type:'emoji',x:planet.x,y:planet.y,
+      emoji:GALAXY_EMOJIS[Math.floor(Math.random()*GALAXY_EMOJIS.length)],born:now,dur:1200});
+    setEffects(prev=>[...prev,...newFx]);
+
+    // Respawn
+    setPlanets(prev=>{const n=[...prev];n[idx]={...n[idx],tapped:true};return n;});
+    setTimeout(()=>setPlanets(prev=>{
+      const n=[...prev];const i=n.findIndex(p=>p.id===planet.id);
+      if(i!==-1)n[i]=spawnPlanet(planetId.current++,n);
+      return n;
+    }),800);
+  },[]);
+
+  const now=Date.now();
+  // Stars
+  const stars=useRef(Array.from({length:80},(_,i)=>({
+    x:Math.random()*100,y:Math.random()*100,size:1+Math.random()*2,
+    delay:Math.random()*4,dur:1.5+Math.random()*2
+  }))).current;
+
+  return (
+    <div data-game-lock style={{position:'fixed',inset:0,zIndex:10,overflow:'hidden',
+      touchAction:'none',overscrollBehavior:'none'}}>
+      {/* Deep space bg */}
+      <div style={{position:'absolute',inset:0,
+        background:'radial-gradient(ellipse at 50% 50%, #0A1428 0%, #050A14 100%)'}} />
+      {/* Nebula clouds */}
+      <div style={{position:'absolute',top:'15%',left:'-30%',width:'80%',height:'40%',borderRadius:'50%',
+        background:'radial-gradient(circle,rgba(139,92,246,0.1),transparent 70%)',
+        animation:'shimmerDrift 25s linear infinite',pointerEvents:'none'}} />
+      <div style={{position:'absolute',top:'50%',right:'-20%',width:'60%',height:'30%',borderRadius:'50%',
+        background:'radial-gradient(circle,rgba(236,72,153,0.08),transparent 70%)',
+        animation:'shimmerDrift 30s linear 5s infinite',pointerEvents:'none'}} />
+      {/* Stars */}
+      {stars.map((s,i)=>(
+        <div key={'s'+i} style={{position:'absolute',left:s.x+'%',top:s.y+'%',
+          width:s.size,height:s.size,borderRadius:'50%',background:'#FFF',
+          animation:`sparkle ${s.dur}s ease-in-out ${s.delay}s infinite`,
+          pointerEvents:'none',zIndex:1}} />
+      ))}
+
+      <BackButton onClick={onBack} />
+      {/* Score */}
+      <div style={{position:'absolute',top:16,right:16,zIndex:40,
+        fontFamily:"'Fredoka One',cursive",fontSize:32,color:'#FBBF24',
+        textShadow:'0 0 15px rgba(251,191,36,0.5)',
+        transform:scorePop?'scale(1.5)':'scale(1)',transition:'transform 0.15s'}}>
+        ⭐ {score}
+      </div>
+      {/* Flash */}
+      {flash&&<div style={{position:'absolute',inset:0,zIndex:45,pointerEvents:'none',
+        background:flash,opacity:0.15,animation:'fadeIn 0.05s ease both'}} />}
+
+      {/* Planets */}
+      {planets.map((p,idx)=>{
+        if(p.tapped)return null;
+        const drift=Math.sin((now/1000)/p.speed+p.phase)*15;
+        const driftY=Math.cos((now/1000)/(p.speed*0.7)+p.phase)*10;
+        return (
+          <div key={p.id} role="button" onClick={()=>handleTap(p,idx)}
+            style={{
+              position:'absolute',
+              left:`calc(${p.x}% + ${drift}px)`,top:`calc(${p.y}% + ${driftY}px)`,
+              width:p.size,height:p.size,borderRadius:'50%',cursor:'pointer',zIndex:20,
+              background:`radial-gradient(circle at 35% 30%, rgba(255,255,255,0.6) 0%, ${p.color} 50%, ${p.color}88 100%)`,
+              boxShadow:`0 0 ${p.size/3}px ${p.glow}, 0 0 ${p.size/2}px ${p.glow}, inset -4px -4px 10px rgba(0,0,0,0.2), inset 2px 2px 6px rgba(255,255,255,0.3)`,
+              transition:'transform 0.15s'
+            }} />
+        );
+      })}
+
+      {/* Effects */}
+      <div style={{position:'fixed',inset:0,pointerEvents:'none',zIndex:50}}>
+        {effects.map(e=>{
+          const age=(now-e.born)/e.dur;
+          const ca=Math.min(age,1);
+          if(e.type==='ray'){
+            return(<div key={e.id} style={{
+              position:'absolute',left:e.x+'%',top:e.y+'%',
+              width:2,height:200*ca,
+              background:`linear-gradient(180deg,${e.color}cc,transparent)`,
+              transformOrigin:'top center',
+              transform:`rotate(${e.angle}deg)`,
+              opacity:1-ca,
+              filter:'blur(1px)'
+            }} />);
+          }
+          if(e.type==='particle'){
+            return(<div key={e.id} style={{
+              position:'absolute',left:e.x+'%',top:e.y+'%',
+              marginLeft:e.vx*ca,marginTop:e.vy*ca+ca*ca*60,
+              width:e.size*(1-ca*0.6),height:e.size*(1-ca*0.6),
+              borderRadius:'50%',background:e.color,opacity:1-ca,
+              boxShadow:`0 0 4px ${e.color}`
+            }} />);
+          }
+          if(e.type==='ring'){
+            const a2=Math.max(0,(now-e.born))/e.dur;
+            const c2=Math.min(a2,1);
+            return(<div key={e.id} style={{
+              position:'absolute',left:e.x+'%',top:e.y+'%',
+              marginLeft:-30,marginTop:-30,width:60,height:60,borderRadius:'50%',
+              border:`3px solid ${e.color}`,
+              transform:`scale(${1+c2*4})`,opacity:1-c2
+            }} />);
+          }
+          if(e.type==='emoji'){
+            return(<div key={e.id} style={{
+              position:'absolute',left:e.x+'%',top:e.y+'%',
+              marginTop:-ca*100,fontSize:60,opacity:1-ca,
+              transform:`scale(${ca<0.1?ca/0.1*2.5:1.5-ca*0.5}) rotate(${(Math.random()-0.5)*60}deg)`
+            }}>{e.emoji}</div>);
+          }
+          return null;
+        })}
+      </div>
+    </div>
+  );
+}
+
 /* ─── MAIN APP ─── */
 function App() {
   const [screen, setScreen] = useState('splash');
@@ -2529,6 +2772,7 @@ function App() {
         {screen === 'shapes' && <ShapePoppers onBack={goHome} />}
         {screen === 'mamino' && <MaminoScreen onBack={goHome} />}
         {screen === 'garden' && <GardenScreen onBack={goHome} />}
+        {screen === 'galaxy' && <GalaxyScreen onBack={goHome} />}
       </div>
     </div>
   );
