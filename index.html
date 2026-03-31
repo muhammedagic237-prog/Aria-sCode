@@ -714,18 +714,19 @@ function MaminoScreen({ onBack }) {
       {/* MAMINOOO text splash */}
       {showText && (
         <div style={{
-          position:'absolute',top:'50%',left:'50%',
-          transform:'translate(-50%,-50%)',
+          position:'absolute',top:'50%',left:0,right:0,
+          transform:'translateY(-50%)',
           zIndex:20,textAlign:'center',
+          padding:'0 10px',
           animation:'titleEntrance 0.5s ease-out forwards'
         }}>
           <div style={{
             fontFamily:"'Baloo 2','Fredoka One',cursive",
-            fontSize:'clamp(52px,16vw,80px)',fontWeight:800,
+            fontSize:'clamp(44px,13vw,72px)',fontWeight:800,
             color:'#FFFFFF',
             textShadow:'0 0 20px rgba(255,105,180,0.8), 0 0 40px rgba(255,105,180,0.5), 0 0 60px rgba(255,105,180,0.3), 3px 3px 0 #FF69B4, -2px -2px 0 #FFB6C1',
             animation:'float 2s ease-in-out infinite',
-            letterSpacing:4
+            letterSpacing:2
           }}>
             MAMINOOO
           </div>
