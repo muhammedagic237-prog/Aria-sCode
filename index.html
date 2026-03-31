@@ -358,36 +358,20 @@ function Particles({ particles }) {
     <div style={{position:'fixed',inset:0,pointerEvents:'none',zIndex:50}}>
       {particles.map(p => {
         const isEmber = p.type === 'ember';
-        const isFire = p.type === 'fire';
         return (
-        <div key={p.id} style={{
-          position:'absolute',
-          left: p.x, top: p.y,
-          width: p.size, height: p.size,
-          borderRadius: '50%',
-          background: p.color
-        }}>
+        <div key={p.id} style={{position:'absolute',left:p.x,top:p.y,width:p.size,height:p.size}}>
           <style>{`
-            @keyframes gb_${p.id} {
-              0%{transform:translate(0,0) scale(1);opacity:1;filter:blur(0px)}
-              ${isFire ? '30%{transform:translate('+p.vx*0.4+'px,'+p.vy*0.4+'px) scale(1.3);opacity:0.9;filter:blur(1px)}' : ''}
-              ${isEmber ? '50%{opacity:0.8}70%{opacity:0.4}' : ''}
-              100%{transform:translate(${p.vx}px,${p.vy}px) scale(${isFire?0.05:isEmber?0.1:0.2}) rotate(${p.rot}deg);opacity:0;filter:blur(${isFire?4:isEmber?3:1}px)}
+            @keyframes gb_${p.id}{
+              0%{transform:translate(0,0) scale(1);opacity:1}
+              ${isEmber?'50%{opacity:0.7}75%{opacity:0.3}':''}
+              100%{transform:translate(${p.vx}px,${p.vy}px) scale(0.15) rotate(${p.rot}deg);opacity:0}
             }
           `}</style>
           <div style={{
             width:'100%',height:'100%',borderRadius:'50%',
-            background: isFire
-              ? `radial-gradient(circle, #FFFFFF 0%, ${p.color} 40%, ${p.color}88 70%, transparent 100%)`
-              : isEmber
-              ? `radial-gradient(circle, ${p.color} 30%, ${p.color}44 100%)`
-              : p.color,
-            boxShadow: isFire
-              ? `0 0 ${p.size}px ${p.color}aa, 0 0 ${p.size*2}px ${p.color}44`
-              : isEmber
-              ? `0 0 ${p.size}px ${p.color}66`
-              : 'none',
-            animation:`gb_${p.id} ${p.dur}ms ${isFire?'ease-in':'ease-out'} forwards`
+            background:p.color,
+            boxShadow: isEmber ? `0 0 ${p.size}px ${p.color}66` : 'none',
+            animation:`gb_${p.id} ${p.dur}ms ease-out forwards`
           }} />
         </div>
         );
@@ -1076,16 +1060,11 @@ function BubbleScreen({ onBack }) {
       // MEGA chime — happy ascending arpeggio
       playChime();
       setTimeout(() => playChime(), 150);
-      // MEGA POP — violent colorful fire burst
-      const megaColors = ['#FF69B4','#FFD700','#00BFFF','#FF6B6B','#A55EEA','#48DBFB','#FECA57','#00D68F','#FF9F43','#FFFFFF','#E6CCFF','#32CD32'];
-      // Fast violent shrapnel
-      burst(cx, cy, 80, megaColors, {speed:2.2, size:1.8, type:'fire', durMul:1.3});
-      // Secondary fire wave
-      setTimeout(() => burst(cx, cy, 60, megaColors, {speed:1.6, size:1.4, type:'fire', durMul:1.1}), 60);
-      // Outer spray
-      setTimeout(() => burst(cx, cy, 40, ['#FFD700','#FFFFFF','#FF69B4','#00BFFF'], {speed:2.5, size:0.8, type:'default'}), 120);
-      // Lingering embers that float up
-      setTimeout(() => burst(cx, cy, 25, ['#FF69B4','#FFD700','#FF6B6B','#FECA57','#FFFFFF'], {speed:0.5, size:1.2, type:'ember', durMul:2, upBias:60}), 180);
+      // MEGA POP — massive rainbow burst
+      const megaColors = ['#FF69B4','#FFD700','#00BFFF','#FF6B6B','#A55EEA','#48DBFB','#FECA57','#00D68F','#FF9F43','#FFFFFF','#E6CCFF','#32CD32','#FF7F50','#00E0FF'];
+      burst(cx, cy, 80, megaColors, {speed:2, size:1.5});
+      setTimeout(() => burst(cx, cy, 50, megaColors, {speed:1.4, size:1.2}), 80);
+      setTimeout(() => burst(cx, cy, 20, ['#FFD700','#FFFFFF'], {speed:0.5, size:0.9, type:'ember', durMul:1.8, upBias:50}), 160);
       // Big baby pink shockwave
       const waveId = Date.now();
       setMegaWave({id:waveId, x:cx, y:cy});
@@ -1102,25 +1081,22 @@ function BubbleScreen({ onBack }) {
       setTimeout(() => setFloatingStars(prev => prev.filter(s => !newStars.includes(s))), 1500);
     } else {
       playPop();
-      // Violent fire burst
-      burst(cx, cy, 40, popColors, {speed:1.8, size:1.5, type:'fire', durMul:1.1});
-      // Spray
-      setTimeout(() => burst(cx, cy, 20, ['#FFD700','#FFFFFF','#FF69B4','#00E0FF'], {speed:2, size:0.7}), 50);
-      // Lingering embers
-      setTimeout(() => burst(cx, cy, 10, ['#FF69B4','#FFD700','#FFFFFF'], {speed:0.4, size:0.8, type:'ember', durMul:1.8, upBias:40}), 100);
+      // 50 colorful particles — all different colors, clean and fast
+      const rainbow = ['#FF69B4','#FFD700','#00BFFF','#FF6B6B','#A55EEA','#48DBFB','#FECA57','#00D68F','#FF9F43','#32CD32','#FF7F50','#E6CCFF','#FFFFFF','#00E0FF'];
+      burst(cx, cy, 50, rainbow, {speed:1.6, size:1});
     }
     const rid = ringId.current++;
     setRings(prev => [...prev, {id:rid, x:cx, y:cy}]);
     setTimeout(() => setRings(prev => prev.filter(r => r.id !== rid)), 600);
-    // Spawn fire-smoke clouds
-    const fogCount = isMega ? 14 : 8;
+    // Spawn fog clouds
+    const fogCount = isMega ? 10 : 4;
     const newFog = Array.from({length:fogCount}, () => ({
       id: fogId.current++,
-      x: cx + (Math.random()-0.5) * (isMega ? 120 : 60),
-      y: cy + (Math.random()-0.5) * (isMega ? 120 : 60),
-      size: (isMega ? 70 : 50) + Math.random() * (isMega ? 100 : 60),
+      x: cx + (Math.random()-0.5) * (isMega ? 100 : 40),
+      y: cy + (Math.random()-0.5) * (isMega ? 100 : 40),
+      size: (isMega ? 60 : 40) + Math.random() * (isMega ? 80 : 40),
       color: fogColors[Math.floor(Math.random() * fogColors.length)],
-      dur: 600 + Math.random() * (isMega ? 1000 : 600)
+      dur: 600 + Math.random() * (isMega ? 800 : 400)
     }));
     setFogClouds(prev => [...prev, ...newFog]);
     setTimeout(() => setFogClouds(prev => prev.filter(f => !newFog.includes(f))), 1800);
