@@ -783,19 +783,29 @@ function PianoScreen({ onBack }) {
   const { particles, burst } = useParticles();
   const [floatingNotes, setFloatingNotes] = useState([]);
   const [glowKeys, setGlowKeys] = useState({});
-  const [trailSparks, setTrailSparks] = useState([]);
+  const [happyFaces, setHappyFaces] = useState([]);
   const noteIdRef = useRef(0);
-  const sparkIdRef = useRef(0);
+  const faceIdRef = useRef(0);
+  const tapCount = useRef(0);
+
+  // Bouncing happy faces
+  const spawnFace = useCallback((x, y) => {
+    const faces = ['😊','😄','🥰','😍','🤩','😆','💖','🌟'];
+    const id = faceIdRef.current++;
+    const face = faces[Math.floor(Math.random()*faces.length)];
+    const vx = (Math.random()-0.5) * 80;
+    setHappyFaces(prev => [...prev, {id, x, y, face, vx}]);
+    setTimeout(() => setHappyFaces(prev => prev.filter(f => f.id !== id)), 1500);
+  }, []);
 
   const handleKey = useCallback((freq, x, y, color, noteIdx) => {
     playNote(freq, 0.6);
-    // Big colorful burst — 35 particles in rainbow + key color
-    burst(x, y, 35, [color, '#FFD700', '#FF69B4', '#87CEEB', '#FFFFFF', '#A55EEA', '#00D2D3', '#FECA57', '#FF6B6B', '#5F6AFF']);
-    // Second delayed mini burst for extra sparkle
-    setTimeout(() => burst(x + (Math.random()-0.5)*40, y + (Math.random()-0.5)*20, 15,
-      ['#FFD700','#FFFFFF','#FF69B4','#87CEEB']), 100);
-    // Floating note emojis — spawn 3 at slightly different positions
-    const emojis = ['🎵','🎶','✨','⭐','💫'];
+    tapCount.current++;
+    // Colorful particle burst
+    const colors = [color,'#FFD700','#FF69B4','#87CEEB','#FFFFFF','#A55EEA','#FECA57','#FF6B6B','#48DBFB','#00D68F','#FF9F43','#FFB6C1'];
+    burst(x, y, 40, colors, {speed:1.4, size:1.2});
+    // Floating emojis — notes + sparkles
+    const emojis = ['🎵','🎶','✨','⭐','💫','🎵'];
     for (let j = 0; j < 3; j++) {
       const id = noteIdRef.current++;
       const emoji = emojis[Math.floor(Math.random()*emojis.length)];
@@ -803,20 +813,14 @@ function PianoScreen({ onBack }) {
       setFloatingNotes(prev => [...prev, {id, x:ox, y:y-10, emoji}]);
       setTimeout(() => setFloatingNotes(prev => prev.filter(n => n.id !== id)), 1200);
     }
-    // Shimmering trail sparks along the key
-    const newSparks = Array.from({length:8}, () => ({
-      id: sparkIdRef.current++,
-      x: x + (Math.random()-0.5)*120,
-      y: y + (Math.random()-0.5)*20,
-      color: [color,'#FFD700','#FFFFFF','#FF69B4'][Math.floor(Math.random()*4)],
-      size: 3 + Math.random()*6
-    }));
-    setTrailSparks(prev => [...prev, ...newSparks]);
-    setTimeout(() => setTrailSparks(prev => prev.filter(s => !newSparks.includes(s))), 800);
+    // Spawn happy face every 3rd tap
+    if (tapCount.current % 3 === 0) {
+      spawnFace(x + (Math.random()-0.5)*100, y - 30);
+    }
     // Glow effect on key
     setGlowKeys(prev => ({...prev, [noteIdx]: color}));
     setTimeout(() => setGlowKeys(prev => { const n = {...prev}; delete n[noteIdx]; return n; }), 400);
-  }, [burst]);
+  }, [burst, spawnFace]);
 
   const whiteKeys = PIANO_KEYS;
   const keyHeight = Math.min(42, (window.innerHeight - 140) / whiteKeys.length);
@@ -880,6 +884,22 @@ function PianoScreen({ onBack }) {
     <div data-game-lock style={{position:'fixed',inset:0,zIndex:10,display:'flex',
       flexDirection:'column',alignItems:'center',paddingTop:'max(50px, env(safe-area-inset-top, 20px))',
       overflow:'hidden',touchAction:'none',overscrollBehavior:'none'}}>
+
+      {/* Premium gradient background */}
+      <div style={{position:'absolute',inset:0,zIndex:0,
+        background:'linear-gradient(180deg, #1a0a2e 0%, #2d1b4e 30%, #4a2068 60%, #2d1b4e 100%)',
+      }} />
+      {/* Subtle sparkles on dark bg */}
+      {[...Array(15)].map((_,i) => (
+        <div key={'ps'+i} style={{
+          position:'absolute',
+          left:(5+Math.random()*90)+'%', top:(5+Math.random()*90)+'%',
+          width:3,height:3,borderRadius:'50%',background:'#FFD700',
+          opacity:0.4,zIndex:1,pointerEvents:'none',
+          animation:`sparkle ${1.5+i*0.2}s ease-in-out ${i*0.3}s infinite`
+        }} />
+      ))}
+
       <BackButton onClick={onBack} />
       <Particles particles={particles} />
 
@@ -891,20 +911,20 @@ function PianoScreen({ onBack }) {
         }}>{n.emoji}</div>
       ))}
 
-      {/* trail sparks */}
-      {trailSparks.map(s => (
-        <div key={s.id} style={{
-          position:'fixed',left:s.x,top:s.y,width:s.size,height:s.size,
-          borderRadius:'50%',background:s.color,pointerEvents:'none',zIndex:51,
-          animation:'sparkle 0.8s ease-out forwards',
-          boxShadow:`0 0 ${s.size*2}px ${s.color}`
-        }} />
+      {/* Bouncing happy faces */}
+      {happyFaces.map(f => (
+        <div key={f.id} style={{
+          position:'fixed',left:f.x,top:f.y,fontSize:36,pointerEvents:'none',zIndex:52,
+          animation:'noteFloat 1.5s ease-out forwards'
+        }}>
+          <div style={{animation:'cardBounce 0.4s ease-in-out 3'}}>{f.face}</div>
+        </div>
       ))}
 
-      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:10}}>
-        <div style={{fontFamily:"'Fredoka One',cursive",fontSize:28,color:'#FF69B4',
-          textShadow:'0 0 10px rgba(255,105,180,0.3)'}}>
-          🎹 Piano
+      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:10,zIndex:10}}>
+        <div style={{fontFamily:"'Fredoka One',cursive",fontSize:28,color:'#FFD700',
+          textShadow:'0 0 15px rgba(255,215,0,0.5), 0 0 30px rgba(255,105,180,0.3)'}}>
+          🎹 Aria's Piano
         </div>
         <div role="button"
           onClick={autoPlaySong}
@@ -927,7 +947,7 @@ function PianoScreen({ onBack }) {
         </div>
       </div>
 
-      <div data-piano-keys style={{position:'relative',width:'90%',maxWidth:380,margin:'0 auto'}}>
+      <div data-piano-keys style={{position:'relative',width:'90%',maxWidth:380,margin:'0 auto',zIndex:10}}>
         {/* White keys */}
         {whiteKeys.map((k, i) => {
           const isGlowing = glowKeys[i];
