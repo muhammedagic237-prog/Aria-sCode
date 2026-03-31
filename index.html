@@ -1024,7 +1024,7 @@ function BubbleScreen({ onBack }) {
   const starId = useRef(0);
   const popCount = useRef(0);
 
-  const pastelColors = ['#FFB6C1','#AED6F1','#E6CCFF','#B2F2BB','#FFF9C4','#FFDAB9'];
+  const pastelColors = ['#FFB6C1','#FFC0CB','#FFB6C1','#FFC0CB','#FFB0BE','#FFADB5'];
   const popColors = ['#FF69B4','#0ABDE3','#5F6AFF','#FFD700','#FF6B6B','#48DBFB','#A55EEA','#00D2D3','#FF9F43','#FECA57','#00D68F','#FF3E7F','#7C5CFC','#00E0FF'];
   const fogColors = ['#FF69B4','#FFB6C1','#E6CCFF','#AED6F1','#FF9F43','#FECA57','#A55EEA','#87CEEB','#FFD700'];
 
@@ -1200,13 +1200,24 @@ function BubbleScreen({ onBack }) {
             bottom: -b.size,
             width: b.size, height: b.size,
             borderRadius: '50%',
-            background: `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), ${b.color}66)`,
-            boxShadow: `inset -4px -4px 10px rgba(0,0,0,0.05), 0 0 20px ${b.color}44`,
+            background: `radial-gradient(circle at 35% 35%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.6) 15%, ${b.color}88 45%, ${b.color}55 70%, rgba(255,182,193,0.3) 100%)`,
+            boxShadow: `inset -6px -6px 15px rgba(180,80,120,0.12), inset 3px 3px 8px rgba(255,255,255,0.5), 0 0 25px ${b.color}33, 0 4px 12px rgba(0,0,0,0.06)`,
+            border: '1px solid rgba(255,255,255,0.35)',
             cursor: 'pointer',
             animation: `bubbleRise ${b.speed}s linear forwards`,
             zIndex: 20
           }}
-        />
+        >
+          {/* Glossy highlight */}
+          <div style={{
+            position:'absolute',top:'12%',left:'18%',
+            width:'35%',height:'25%',
+            borderRadius:'50%',
+            background:'radial-gradient(ellipse, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 100%)',
+            transform:'rotate(-30deg)',
+            pointerEvents:'none'
+          }} />
+        </div>
       ))}
     </div>
   );
