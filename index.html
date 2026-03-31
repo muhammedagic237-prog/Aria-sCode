@@ -1739,6 +1739,10 @@ const CARTOONS = [
   {id:'6vR4LzZuzxc',title:'Hey Bear - Avocadosaurus Dance Party'},
   {id:'b7-C8Mzl7gc',title:'Hey Bear - Dancing Fruit & Veggies Mini'},
   {id:'WlO2G0HzBPE',title:'CoComelon - Yes Yes Get Dressed Song'},
+  {id:'0jW1XKc_e1o',title:'Choo-Choo - Leo & the Train'},
+  {id:'hbTWlsyxHuA',title:'Choo-Choo Train Cartoons 30min'},
+  {id:'guYjvSHbXms',title:'Choo-Choo Train Song'},
+  {id:'dZUq8hpKICY',title:'Choo-Choo - Find the Animal'},
 ];
 
 function CartoonScreen({ onBack, startIdx = 0 }) {
@@ -2242,7 +2246,7 @@ function CartoonBrowser({ onSelect, onBack }) {
             onMouseUp={e => e.currentTarget.style.transform='scale(1)'}
           >
             <span style={{fontSize:36,marginBottom:6}}>
-              {c.title.includes('Hey Bear') ? '🐻' : c.title.includes('Pinkfong') ? '🦈' : '👶'}
+              {c.title.includes('Hey Bear') ? '🐻' : c.title.includes('Pinkfong') ? '🦈' : c.title.includes('Choo') ? '🚂' : '👶'}
             </span>
             <span style={{
               fontFamily:"'Nunito',sans-serif",fontSize:'clamp(11px,3vw,14px)',
