@@ -2788,23 +2788,14 @@ function GalaxyScreen({ onBack }) {
   );
 }
 
-/* ─── SNAKE GUIDE ─── */
-const SNAKE_TARGETS = [
-  {emoji:'🍎',name:'Apple',color:'#FF3333'},
-  {emoji:'🍭',name:'Candy',color:'#FFD700'},
-  {emoji:'⭐',name:'Star',color:'#FFA500'},
-  {emoji:'💎',name:'Gem',color:'#00FFFF'},
-  {emoji:'🫐',name:'Berry',color:'#9D4EDD'},
-  {emoji:'🌸',name:'Flower',color:'#FF1493'}
-];
+/* ─── SNAKE FOLLOWER ─── */
 
 function SnakeScreen({ onBack }) {
-  const segCount = 7;
-  const segsRef = useRef([]);
   const headRef = useRef({x:0,y:0});
+  const segsRef = useRef([]);
+  const foodRef = useRef([]);
   const dragging = useRef(false);
   const fingerRef = useRef({x:0,y:0});
-  const targetRef = useRef(null);
   const [score, setScore] = useState(0);
   const [scorePop, setScorePop] = useState(false);
   const [effects, setEffects] = useState([]);
@@ -2812,248 +2803,223 @@ function SnakeScreen({ onBack }) {
   const effectId = useRef(0);
   const inited = useRef(false);
 
-  // Init
-  useEffect(() => {
-    const cx = window.innerWidth / 2;
-    const cy = window.innerHeight * 0.75;
-    headRef.current = {x:cx, y:cy};
-    const s = [];
-    for (let i = 0; i < segCount; i++) s.push({x:cx, y:cy + (i+1)*22});
-    segsRef.current = s;
-    // Spawn first target
-    targetRef.current = {
-      ...SNAKE_TARGETS[Math.floor(Math.random()*SNAKE_TARGETS.length)],
-      x: 50 + Math.random()*(window.innerWidth-100),
-      y: 80 + Math.random()*(window.innerHeight*0.4)
+  function spawnFood() {
+    const colors = ['#FFFF00','#FFA500','#FF69B4','#00BFFF','#32CD32','#FFD700'];
+    const emojis = ['⭐','🌟','💫','✨','🍎','🍬'];
+    return {
+      x: 40 + Math.random()*(window.innerWidth-80),
+      y: 60 + Math.random()*(window.innerHeight*0.6),
+      color: colors[Math.floor(Math.random()*colors.length)],
+      emoji: emojis[Math.floor(Math.random()*emojis.length)],
+      id: Date.now()+Math.random()
     };
+  }
+
+  useEffect(() => {
+    const cx = window.innerWidth/2;
+    const cy = window.innerHeight*0.65;
+    headRef.current = {x:cx,y:cy};
+    const s = [];
+    for(let i=0;i<3;i++) s.push({x:cx,y:cy+(i+1)*18});
+    segsRef.current = s;
+    foodRef.current = [spawnFood(), spawnFood()];
     inited.current = true;
+
+    // Food spawn timer
+    const foodTimer = setInterval(()=>{
+      if(foodRef.current.length<5) foodRef.current.push(spawnFood());
+    },3000);
 
     let raf;
     const loop = () => {
       const head = headRef.current;
-      const finger = fingerRef.current;
-
-      // Move head toward finger when dragging
-      if (dragging.current) {
-        head.x += (finger.x - head.x) * 0.12;
-        head.y += (finger.y - head.y) * 0.12;
+      if(dragging.current) {
+        head.x += (fingerRef.current.x - head.x)*0.15;
+        head.y += (fingerRef.current.y - head.y)*0.15;
       }
-
-      // Body follows head
-      const segs = segsRef.current;
+      // Body chain follow
       let prev = head;
-      for (let i = 0; i < segs.length; i++) {
-        const s = segs[i];
-        const dx = prev.x - s.x;
-        const dy = prev.y - s.y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        const spacing = 20;
-        if (dist > spacing) {
-          const ratio = spacing / dist;
-          s.x = prev.x - dx * ratio;
-          s.y = prev.y - dy * ratio;
+      for(let i=0;i<segsRef.current.length;i++){
+        const s = segsRef.current[i];
+        const dx = prev.x-s.x, dy = prev.y-s.y;
+        const dist = Math.sqrt(dx*dx+dy*dy);
+        const spacing = 16;
+        if(dist>spacing){
+          const r = spacing/dist;
+          s.x = prev.x - dx*r;
+          s.y = prev.y - dy*r;
         }
         prev = s;
       }
-
-      // Check target collision
-      const t = targetRef.current;
-      if (t) {
-        const tdx = head.x - t.x;
-        const tdy = head.y - t.y;
-        if (Math.sqrt(tdx*tdx+tdy*tdy) < 35) {
-          // HIT!
-          const now = Date.now();
-          const newFx = [];
-          for (let i = 0; i < 25; i++) {
-            const angle = Math.random()*Math.PI*2;
-            const speed = 60+Math.random()*120;
-            newFx.push({id:effectId.current++,type:'p',
-              x:t.x,y:t.y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,
-              color:['#FF6B6B','#FFE66D','#4ECDC4','#FFA3D7','#B8F0FF','#FFB6C1','#FFD700'][Math.floor(Math.random()*7)],
-              size:6+Math.random()*10,born:now,dur:700});
+      // Check food collision while dragging
+      if(dragging.current){
+        for(let i=foodRef.current.length-1;i>=0;i--){
+          const f = foodRef.current[i];
+          const dx=head.x-f.x, dy=head.y-f.y;
+          if(Math.sqrt(dx*dx+dy*dy)<35){
+            // Eat!
+            foodRef.current.splice(i,1);
+            getAudioContext();
+            playChime();
+            // Add body segment
+            const tail = segsRef.current[segsRef.current.length-1];
+            segsRef.current.push({x:tail.x,y:tail.y+16});
+            // Particles
+            const now=Date.now();
+            const newFx=[];
+            for(let j=0;j<20;j++){
+              const angle=Math.random()*Math.PI*2;
+              const speed=50+Math.random()*100;
+              newFx.push({id:effectId.current++,type:'p',x:f.x,y:f.y,
+                vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,
+                color:['#FFD700','#FF69B4','#00BFFF','#FECA57','#FF6B6B','#FFFFFF'][Math.floor(Math.random()*6)],
+                size:5+Math.random()*8,born:now,dur:600});
+            }
+            newFx.push({id:effectId.current++,type:'emoji',x:f.x,y:f.y,
+              emoji:['🎉','✨','😋','⭐'][Math.floor(Math.random()*4)],born:now,dur:800});
+            setEffects(prev=>[...prev,...newFx]);
+            setScore(prev=>prev+1);
+            setScorePop(true);
+            setTimeout(()=>setScorePop(false),300);
           }
-          newFx.push({id:effectId.current++,type:'emoji',x:t.x,y:t.y,
-            emoji:['🎉','✨','🌟','💥'][Math.floor(Math.random()*4)],born:now,dur:900});
-          newFx.push({id:effectId.current++,type:'ring',x:t.x,y:t.y,color:t.color,born:now,dur:400});
-          setEffects(prev=>[...prev,...newFx]);
-          setScore(prev=>prev+1);
-          setScorePop(true);
-          setTimeout(()=>setScorePop(false),300);
-
-          // Play chime
-          getAudioContext();
-          playChime();
-
-          // Respawn target
-          targetRef.current = {
-            ...SNAKE_TARGETS[Math.floor(Math.random()*SNAKE_TARGETS.length)],
-            x: 40 + Math.random()*(window.innerWidth-80),
-            y: 80 + Math.random()*(window.innerHeight*0.45)
-          };
         }
       }
-
       setTick(n=>n+1);
-      raf = requestAnimationFrame(loop);
+      raf=requestAnimationFrame(loop);
     };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  }, []);
+    raf=requestAnimationFrame(loop);
+    return()=>{cancelAnimationFrame(raf);clearInterval(foodTimer);};
+  },[]);
 
   // Cleanup effects
-  useEffect(() => {
+  useEffect(()=>{
     const t=setInterval(()=>setEffects(prev=>prev.filter(e=>Date.now()-e.born<e.dur)),500);
-    return ()=>clearInterval(t);
+    return()=>clearInterval(t);
   },[]);
 
-  const onDown = useCallback((e) => {
-    const cx = e.touches ? e.touches[0].clientX : e.clientX;
-    const cy = e.touches ? e.touches[0].clientY : e.clientY;
-    const h = headRef.current;
-    const dx = cx-h.x, dy = cy-h.y;
-    if (Math.sqrt(dx*dx+dy*dy) < 60) {
-      dragging.current = true;
-      fingerRef.current = {x:cx,y:cy};
+  const onDown=useCallback((e)=>{
+    const cx=e.touches?e.touches[0].clientX:e.clientX;
+    const cy=e.touches?e.touches[0].clientY:e.clientY;
+    const h=headRef.current;
+    if(Math.sqrt((cx-h.x)**2+(cy-h.y)**2)<60){
+      dragging.current=true;
+      fingerRef.current={x:cx,y:cy};
     }
   },[]);
-
-  const onMove = useCallback((e) => {
-    if (!dragging.current) return;
+  const onMove=useCallback((e)=>{
+    if(!dragging.current)return;
     e.preventDefault();
-    const cx = e.touches ? e.touches[0].clientX : e.clientX;
-    const cy = e.touches ? e.touches[0].clientY : e.clientY;
-    fingerRef.current = {x:cx,y:cy};
+    const cx=e.touches?e.touches[0].clientX:e.clientX;
+    const cy=e.touches?e.touches[0].clientY:e.clientY;
+    fingerRef.current={x:cx,y:cy};
   },[]);
+  const onUp=useCallback(()=>{dragging.current=false;},[]);
 
-  const onUp = useCallback(() => { dragging.current = false; },[]);
+  if(!inited.current)return null;
+  const head=headRef.current;
+  const segs=segsRef.current;
+  const food=foodRef.current;
+  const now=Date.now();
 
-  if (!inited.current) return null;
-  const head = headRef.current;
-  const segs = segsRef.current;
-  const target = targetRef.current;
-  const now = Date.now();
-
-  return (
+  return(
     <div data-game-lock style={{position:'fixed',inset:0,zIndex:10,overflow:'hidden',
-      touchAction:'none',overscrollBehavior:'none'}}
+      touchAction:'none',overscrollBehavior:'none',background:'#ADD8E6'}}
       onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp}
       onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}>
 
-      {/* Sky */}
-      <div style={{position:'absolute',inset:0,
-        background:'linear-gradient(180deg, #FFB6C1 0%, #87CEEB 60%, #7BC67E 100%)'}} />
-      {/* Hills */}
-      <div style={{position:'absolute',bottom:0,left:'-10%',width:'120%',height:'22%',
-        borderRadius:'50% 50% 0 0',background:'#7BC67E'}} />
-      <div style={{position:'absolute',bottom:0,left:'25%',width:'100%',height:'18%',
-        borderRadius:'50% 50% 0 0',background:'#5AAF5E'}} />
-      <div style={{position:'absolute',bottom:0,left:'-15%',width:'90%',height:'14%',
-        borderRadius:'50% 50% 0 0',background:'#3D9142'}} />
-      {/* Clouds */}
-      <div style={{position:'absolute',top:'8%',width:90,height:35,borderRadius:35,
-        background:'rgba(255,255,255,0.7)',animation:'shimmerDrift 22s linear infinite'}} />
-      <div style={{position:'absolute',top:'16%',width:65,height:25,borderRadius:25,
-        background:'rgba(255,255,255,0.5)',animation:'shimmerDrift 28s linear 6s infinite'}} />
-
       <BackButton onClick={onBack} />
       <div style={{position:'absolute',top:16,right:16,zIndex:40,
-        fontFamily:"'Fredoka One',cursive",fontSize:32,color:'#FFD700',
-        textShadow:'0 2px 8px rgba(0,0,0,0.2)',
+        fontFamily:"'Fredoka One',cursive",fontSize:32,color:'#FF69B4',
+        textShadow:'0 2px 8px rgba(0,0,0,0.15)',
         transform:scorePop?'scale(1.5)':'scale(1)',transition:'transform 0.15s'}}>
-        ⭐ {score}
+        🐍 {score}
       </div>
 
-      {/* Hint text */}
-      {score === 0 && !dragging.current && (
-        <div style={{position:'absolute',bottom:'30%',left:'50%',transform:'translateX(-50%)',
-          zIndex:30,fontFamily:"'Fredoka One',cursive",fontSize:'clamp(16px,4vw,22px)',
+      {/* Hint */}
+      {score===0&&!dragging.current&&(
+        <div style={{position:'absolute',bottom:'28%',left:'50%',transform:'translateX(-50%)',
+          zIndex:30,fontFamily:"'Fredoka One',cursive",fontSize:'clamp(16px,4vw,20px)',
           color:'white',textShadow:'0 2px 8px rgba(0,0,0,0.3)',textAlign:'center',
           animation:'pulse 2s ease-in-out infinite',
-          background:'rgba(0,0,0,0.15)',padding:'8px 20px',borderRadius:20}}>
-          Touch the snake and drag! 🐍
+          background:'rgba(255,105,180,0.5)',padding:'10px 24px',borderRadius:24}}>
+          Hold the snake and drag! 🐍
         </div>
       )}
 
-      {/* Target */}
-      {target && (
-        <div style={{
-          position:'absolute',left:target.x-25,top:target.y-25,
-          width:50,height:50,zIndex:15,
-          fontSize:42,textAlign:'center',lineHeight:'50px',
-          filter:`drop-shadow(0 0 12px ${target.color}88)`,
-          animation:'float 2.5s ease-in-out infinite'
-        }}>{target.emoji}</div>
-      )}
+      {/* Food items */}
+      {food.map(f=>(
+        <div key={f.id} style={{
+          position:'absolute',left:f.x-20,top:f.y-20,
+          width:40,height:40,fontSize:32,textAlign:'center',lineHeight:'40px',
+          filter:`drop-shadow(0 0 10px ${f.color}88)`,
+          animation:'float 2s ease-in-out infinite',zIndex:15
+        }}>{f.emoji}</div>
+      ))}
 
-      {/* Snake body segments */}
-      {segs.map((s,i) => {
-        const green = Math.max(100, 200 - i*15);
-        return (
+      {/* Snake body */}
+      {segs.map((s,i)=>{
+        const total=segs.length;
+        const ratio=1-((i+1)/(total+1))*0.5;
+        const size=Math.max(12,28*ratio);
+        const pink=Math.round(192+(255-192)*(i/total)*0.5);
+        return(
           <div key={i} style={{
             position:'absolute',
-            left:s.x - 12 + i*0.5, top:s.y - 12 + i*0.5,
-            width:24 - i, height:24 - i,
-            borderRadius:8,
-            background:`rgb(0,${green},30)`,
-            boxShadow:'0 2px 4px rgba(0,0,0,0.15)',
-            zIndex:18 - i,
-            transition: dragging.current ? 'none' : 'left 0.1s, top 0.1s'
+            left:s.x-size/2,top:s.y-size/2,
+            width:size,height:size,
+            borderRadius:'50%',
+            background:`rgb(255,${pink},${Math.round(203+(230-203)*(i/total)*0.5)})`,
+            boxShadow:'0 2px 6px rgba(0,0,0,0.12)',
+            zIndex:18-i
           }} />
         );
       })}
 
       {/* Snake head */}
       <div style={{
-        position:'absolute',
-        left:head.x - 20, top:head.y - 20,
-        width:40, height:40,
-        borderRadius:'50%',
-        background:'radial-gradient(circle at 35% 30%, #90FF90, #00FF41 50%, #00CC33)',
-        boxShadow:'0 3px 8px rgba(0,0,0,0.2), 0 0 15px rgba(0,255,65,0.3)',
+        position:'absolute',left:head.x-22,top:head.y-22,
+        width:44,height:44,borderRadius:'50%',
+        background:'radial-gradient(circle at 35% 30%, #FFF0F5, #FFC0CB 50%, #FFB0BE)',
+        boxShadow:'0 3px 10px rgba(0,0,0,0.15), 0 0 20px rgba(255,192,203,0.4)',
         zIndex:20
       }}>
         {/* Eyes */}
-        <div style={{position:'absolute',top:10,left:8,width:10,height:10,borderRadius:'50%',background:'white'}}>
-          <div style={{position:'absolute',top:3,left:3,width:5,height:5,borderRadius:'50%',background:'#222'}} />
+        <div style={{position:'absolute',top:11,left:8,width:11,height:11,borderRadius:'50%',background:'white',boxShadow:'inset 0 1px 3px rgba(0,0,0,0.1)'}}>
+          <div style={{position:'absolute',top:3,left:4,width:5,height:5,borderRadius:'50%',background:'#333'}} />
+          <div style={{position:'absolute',top:2,left:5,width:2,height:2,borderRadius:'50%',background:'white'}} />
         </div>
-        <div style={{position:'absolute',top:10,right:8,width:10,height:10,borderRadius:'50%',background:'white'}}>
-          <div style={{position:'absolute',top:3,left:3,width:5,height:5,borderRadius:'50%',background:'#222'}} />
+        <div style={{position:'absolute',top:11,right:8,width:11,height:11,borderRadius:'50%',background:'white',boxShadow:'inset 0 1px 3px rgba(0,0,0,0.1)'}}>
+          <div style={{position:'absolute',top:3,left:4,width:5,height:5,borderRadius:'50%',background:'#333'}} />
+          <div style={{position:'absolute',top:2,left:5,width:2,height:2,borderRadius:'50%',background:'white'}} />
         </div>
-        {/* Cheeks */}
-        <div style={{position:'absolute',bottom:8,left:4,width:8,height:6,borderRadius:'50%',background:'#FFB6C1',opacity:0.6}} />
-        <div style={{position:'absolute',bottom:8,right:4,width:8,height:6,borderRadius:'50%',background:'#FFB6C1',opacity:0.6}} />
+        {/* Rosy cheeks */}
+        <div style={{position:'absolute',bottom:9,left:3,width:9,height:6,borderRadius:'50%',background:'#FF69B4',opacity:0.35}} />
+        <div style={{position:'absolute',bottom:9,right:3,width:9,height:6,borderRadius:'50%',background:'#FF69B4',opacity:0.35}} />
         {/* Smile */}
-        <div style={{position:'absolute',bottom:6,left:'50%',transform:'translateX(-50%)',
-          width:12,height:6,borderRadius:'0 0 6px 6px',border:'2px solid #006600',borderTop:'none'}} />
+        <div style={{position:'absolute',bottom:7,left:'50%',transform:'translateX(-50%)',
+          width:14,height:7,borderRadius:'0 0 7px 7px',border:'2px solid #E75480',borderTop:'none'}} />
+        {/* Tongue */}
+        <div style={{position:'absolute',bottom:2,left:'50%',transform:'translateX(-50%)',
+          width:6,height:8,borderRadius:'0 0 3px 3px',background:'#FF6B81'}} />
       </div>
 
       {/* Effects */}
       <div style={{position:'fixed',inset:0,pointerEvents:'none',zIndex:50}}>
         {effects.map(e=>{
-          const age=(now-e.born)/e.dur;
-          const ca=Math.min(age,1);
+          const age=(now-e.born)/e.dur;const ca=Math.min(age,1);
           if(e.type==='p'){
             return(<div key={e.id} style={{
-              position:'absolute',left:e.x+e.vx*ca,top:e.y+e.vy*ca+ca*ca*50,
+              position:'absolute',left:e.x+e.vx*ca,top:e.y+e.vy*ca+ca*ca*40,
               width:e.size*(1-ca*0.6),height:e.size*(1-ca*0.6),
               borderRadius:'50%',background:e.color,opacity:1-ca
             }} />);
           }
           if(e.type==='emoji'){
             return(<div key={e.id} style={{
-              position:'absolute',left:e.x-20,top:e.y-ca*80,
-              fontSize:40,opacity:1-ca,
-              transform:`scale(${ca<0.1?ca*12:1.5-ca*0.5})`
+              position:'absolute',left:e.x-16,top:e.y-ca*70,
+              fontSize:36,opacity:1-ca,
+              transform:`scale(${ca<0.1?ca*12:1.4-ca*0.4})`
             }}>{e.emoji}</div>);
-          }
-          if(e.type==='ring'){
-            return(<div key={e.id} style={{
-              position:'absolute',left:e.x-25,top:e.y-25,
-              width:50,height:50,borderRadius:'50%',
-              border:`3px solid ${e.color}`,
-              transform:`scale(${1+ca*4})`,opacity:1-ca
-            }} />);
           }
           return null;
         })}
