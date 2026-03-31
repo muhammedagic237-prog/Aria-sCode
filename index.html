@@ -2961,14 +2961,14 @@ function SnakeScreen({ onBack }) {
         const total=segs.length;
         const ratio=1-((i+1)/(total+1))*0.5;
         const size=Math.max(12,28*ratio);
-        const pink=Math.round(192+(255-192)*(i/total)*0.5);
+        const green=Math.max(100,200-Math.round(i*15));
         return(
           <div key={i} style={{
             position:'absolute',
             left:s.x-size/2,top:s.y-size/2,
             width:size,height:size,
             borderRadius:'50%',
-            background:`rgb(255,${pink},${Math.round(203+(230-203)*(i/total)*0.5)})`,
+            background:`rgb(0,${green},30)`,
             boxShadow:'0 2px 6px rgba(0,0,0,0.12)',
             zIndex:18-i
           }} />
@@ -2979,8 +2979,8 @@ function SnakeScreen({ onBack }) {
       <div style={{
         position:'absolute',left:head.x-22,top:head.y-22,
         width:44,height:44,borderRadius:'50%',
-        background:'radial-gradient(circle at 35% 30%, #FFF0F5, #FFC0CB 50%, #FFB0BE)',
-        boxShadow:'0 3px 10px rgba(0,0,0,0.15), 0 0 20px rgba(255,192,203,0.4)',
+        background:'radial-gradient(circle at 35% 30%, #90FF90, #00FF41 50%, #00CC33)',
+        boxShadow:'0 3px 10px rgba(0,0,0,0.15), 0 0 20px rgba(0,255,65,0.3)',
         zIndex:20
       }}>
         {/* Eyes */}
@@ -2997,10 +2997,10 @@ function SnakeScreen({ onBack }) {
         <div style={{position:'absolute',bottom:9,right:3,width:9,height:6,borderRadius:'50%',background:'#FF69B4',opacity:0.35}} />
         {/* Smile */}
         <div style={{position:'absolute',bottom:7,left:'50%',transform:'translateX(-50%)',
-          width:14,height:7,borderRadius:'0 0 7px 7px',border:'2px solid #E75480',borderTop:'none'}} />
+          width:14,height:7,borderRadius:'0 0 7px 7px',border:'2px solid #006600',borderTop:'none'}} />
         {/* Tongue */}
         <div style={{position:'absolute',bottom:2,left:'50%',transform:'translateX(-50%)',
-          width:6,height:8,borderRadius:'0 0 3px 3px',background:'#FF6B81'}} />
+          width:6,height:8,borderRadius:'0 0 3px 3px',background:'#FF4444'}} />
       </div>
 
       {/* Effects */}
